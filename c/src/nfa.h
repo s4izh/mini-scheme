@@ -7,43 +7,52 @@
 #define MAX_STATES 100
 #define ALPHABET_SIZE 256 // ascii
 
-typedef u32 (*nfa_callback_t)(void*, void*);
+typedef struct _nfa_engine_t nfa_engine_t;
 
-// typedef enum {
-//     NFA_STATE_START,
-//     NFA_STATE_PROCESSING,
-//     NFA_STATE_ACCEPT,
-//     NFA_STATE_REJECT,
-//     NFA_STATE_ERROR,
-//     NFA_STATE_COUNT,
-// } nfa_engine_state_t;
+typedef u32 (*nfa_callback_t)(nfa_engine_t*, void*);
+typedef const char* (*state_to_str_callback_t)(u32);
 
 typedef enum {
-    bool accept;
+    NFA_ACCEPT,
+    NFA_CONTINUE,
+    NFA_REJECT,
+} nfa_conclusion_t;
+
+typedef struct {
+    nfa_conclusion_t conclusion;
     bool determinist;
-    const char non_determinist_symbols[ALPHABET_SIZE];
+    da_char non_determinist_symbols;
+    nfa_callback_t non_determinist_cb;
+    nfa_callback_t epsillon_cb;
 } nfa_state_t;
 
 typedef struct {
     u32 state_prev;
-    const char symbols[ALPHABET_SIZE];
-    u32 state_final;
-    nfa_callback_t non_determinist_cb;
-    nfa_callback_t epsillon_cb;
+    da_char symbols;
+    u32 state_next;
 } nfa_transition_t;
 
 DA_DEFINE(nfa_state_t, da_nfa_state);
 DA_DEFINE(nfa_transition_t, da_nfa_transition);
 
-typedef struct {
-    u32 prev_state;
-    u32 current_state;
+struct _nfa_engine_t {
+    u32 state_prev;
+    u32 state_current;
     da_nfa_state states;
     da_nfa_transition transitions;
-} nfa_engine_t;
+    state_to_str_callback_t state_to_str_cb;
+    void* user_data;
+};
 
-void nfa_init(nfa_engine_t* nfa, u32 states);
-void nfa_configure_state(nfa_engine_t* nfa, u32 state, bool accept, nfa_callback_t non_determinist_cb, nfa_callback_t epsillon_cb);
-void nfa_add_transition(nfa_engine_t* nfa, u32 prev_state, string_view_t symbols, u32 next_state);
+void nfa_init(nfa_engine_t* nfa, u32 states, state_to_str_callback_t cb, void* user_data);
+void nfa_configure_state(nfa_engine_t* nfa, u32 state, nfa_conclusion_t accept, nfa_callback_t non_determinist_cb, nfa_callback_t epsillon_cb);
+
+void nfa_restart(nfa_engine_t* nfa, u32 state);
+nfa_conclusion_t nfa_process(nfa_engine_t* nfa, char c);
+
+void nfa_add_transition(nfa_engine_t* nfa, u32 state_prev, const char* symbols, u32 state_next);
+void nfa_add_transition_safe(nfa_engine_t* nfa, u32 state_prev, u32 state_next, const char* symbols, u32 size);
+
+void nfa_generated_register_transitions(nfa_engine_t* nfa);
 
 #endif // !__NFA_H__

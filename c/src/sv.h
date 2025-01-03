@@ -2,8 +2,6 @@
 #define __STRING_VIEW_H__
 
 #include <stddef.h>
-#include <string.h>
-#include <stdio.h>
 
 typedef struct {
     const char* data;

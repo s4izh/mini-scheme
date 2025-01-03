@@ -12,8 +12,8 @@ typedef enum {
     // SCM_TOKEN_LET,
     // SCM_TOKEN_DEFINE,
     SCM_TOKEN_IDENTIFIER,
-    SCM_TOKEN_NUMBER_LITERAL,
-    SCM_TOKEN_STRING_LITERAL,
+    SCM_TOKEN_LITERAL_NUMBER,
+    SCM_TOKEN_LITERAL_STRING,
     SCM_TOKEN_QUOTE,
     SCM_TOKEN_QUASIQUOTE,
     SCM_TOKEN_COMMA,
@@ -28,36 +28,38 @@ typedef struct {
     u32 line;
 } scm_token_t;
 
-void scm_print_token(scm_token_t* tkn);
+void scm_token_print(scm_token_t* tkn, bool only_token_type);
 
 typedef enum {
-    SCM_LEXER_NFA_STATE_START = 0,
-    SCM_LEXER_NFA_STATE_QUASIQUOTE_0,
-    SCM_LEXER_NFA_STATE_QUASIQUOTE_A,
-    SCM_LEXER_NFA_STATE_QUOTE_0,
-    SCM_LEXER_NFA_STATE_QUOTE_A,
-    SCM_LEXER_NFA_STATE_LP_A,
-    SCM_LEXER_NFA_STATE_RP_A,
-    SCM_LEXER_NFA_STATE_IDENTIFIER_0,
-    SCM_LEXER_NFA_STATE_IDENTIFIER_A,
-    SCM_LEXER_NFA_STATE_LITERAL_NUMBER_0,
-    SCM_LEXER_NFA_STATE_LITERAL_NUMBER_A,
-    SCM_LEXER_NFA_STATE_STRING_NUMBER_0,
-    SCM_LEXER_NFA_STATE_STRING_NUMBER_A,
+    SCM_LEXER_NFA_START = 0,
+    SCM_LEXER_NFA_QUASIQUOTE_0,
+    SCM_LEXER_NFA_QUASIQUOTE_A,
+    SCM_LEXER_NFA_QUOTE_0,
+    SCM_LEXER_NFA_QUOTE_A,
+    SCM_LEXER_NFA_LP_A,
+    SCM_LEXER_NFA_RP_A,
+    SCM_LEXER_NFA_IDENTIFIER_0,
+    SCM_LEXER_NFA_IDENTIFIER_A,
+    SCM_LEXER_NFA_LITERAL_NUMBER_0,
+    SCM_LEXER_NFA_LITERAL_NUMBER_A,
+    SCM_LEXER_NFA_LITERAL_STRING_0,
+    SCM_LEXER_NFA_LITERAL_STRING_1,
+    SCM_LEXER_NFA_LITERAL_STRING_A,
+    SCM_LEXER_NFA_INVALID_R,
     SCM_LEXER_NFA_NUM_STATES,
 } scm_lexer_nfa_state_t;
 
 typedef struct {
+    const char* filename;
     const char* src;
     u32 len;
     u32 pos;
     u32 line;
     bool has_error;
-    // scm_lexer_dfa_state_t state;
     nfa_engine_t nfa;
 } scm_lexer_t;
 
-void scm_lexer_init(scm_lexer_t* lx, const char* src, u32 len);
+void scm_lexer_init(scm_lexer_t* lx, const char* filename, const char* src, u32 len);
 scm_token_t scm_lexer_next_token(scm_lexer_t* lx);
 
 // for the future parser
@@ -72,5 +74,45 @@ scm_token_t scm_lexer_next_token(scm_lexer_t* lx);
 //     }
 //     return 0;
 // }
+
+
+#define SCM_SYMBOLS_NO_SPECIAL "!@#$%^&*-_=+[]{}|;:,.<>?/\\~"
+#define SCM_LETTERS "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+#define SCM_NUMBERS "0123456789"
+#define SCM_LETTERS_NUMBERS SCM_LETTERS SCM_NUMBERS
+
+#define SCM_IDENTIFIERS_BASE SCM_SYMBOLS_NO_SPECIAL SCM_LETTERS
+#define SCM_IDENTIFIERS_ALL SCM_SYMBOLS_NO_SPECIAL SCM_LETTERS SCM_NUMBERS
+
+// le aposta el "\\"
+#define SCM_LITERAL_STRING_SYMBOLS "!@#$%^&*-_=+[]{}|;:,.<>?/~'`()"
+#define SCM_LITERAL_STRING_ESCAPE "\\"
+#define SCM_LITERAL_STRING SCM_LITERAL_STRING_SYMBOLS SCM_LETTERS SCM_NUMBERS
+
+#define SCM_LITERAL_STRING_SYMBOLS_VALID_ESCAPED SCM_LITERAL_STRING_SYMBOLS "'`()\\"
+#define SCM_LITERAL_STRING_VALID_ESCAPED SCM_LITERAL_STRING_SYMBOLS_VALID_ESCAPED SCM_LETTERS SCM_NUMBERS
+
+#define SCM_WHITESPACE " \t\n\v\f\r"
+#define SCM_QUOTATION "\""
+#define SCM_QUOTE "\'"
+#define SCM_QUASIQUOTE "`"
+#define SCM_LPAREN "("
+#define SCM_RPAREN ")"
+#define SCM_EOS "\0"
+
+    // const char ALL_CHARACTERS[] = 
+    //     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    //     "abcdefghijklmnopqrstuvwxyz"
+    //     "0123456789"
+    //     "!@#$%^&*-_=+[]{}|;:'\",.<>?/\\`~()";
+
+// #define SCM_LEXER_SLEEP_ENABLE 1
+#ifdef SCM_LEXER_SLEEP_ENABLE
+#define SCM_LEXER_SLEEP usleep(300000);
+#else
+#define SCM_LEXER_SLEEP ;
+#endif
+
+DA_DEFINE(scm_token_t, da_token);  
 
 #endif // __SCM_LEXER_H__

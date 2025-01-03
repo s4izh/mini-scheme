@@ -19,5 +19,11 @@ typedef float    f32;
 typedef double   f64;
 
 #include "sv.h"
+#include "ds.h"
+
+#define is_between(i, start, end) ((token) >= (start) && (token) <= (end))
+
+DA_DEFINE(char, da_char);
+DA_DEFINE(u32, da_u32);
 
 #endif // __TYPES_H__

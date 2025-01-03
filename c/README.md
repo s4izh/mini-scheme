@@ -12,3 +12,6 @@
 
 - state machine
   https://www.youtube.com/watch?v=NTEHRjiAY2I&t=1414s
+
+- https://www.cs.upc.edu/~cl/teoria/index.html
+- https://docs.scheme.org/schintro/schintro_115.html#SEC135

@@ -29,6 +29,37 @@
         (array)->capacity = (n);                              \
     } while (0)
 
+#define da_copy(from, to)                                              \
+    do {                                                               \
+        (to)->data = malloc((from)->capacity * sizeof(*(from)->data)); \
+        if ((to)->data != NULL) {                                      \
+            (to)->size = (from)->size;                                 \
+            (to)->capacity = (from)->capacity;                         \
+            memcpy(                                                    \
+                (to)->data, (from)->data,                              \
+                (from)->size * sizeof(*(from)->data));                 \
+        } else {                                                       \
+            (to)->size = 0;                                            \
+            (to)->capacity = 0;                                        \
+        }                                                              \
+    } while (0)
+
+#define da_create_from_c_array(array, const_data, data_size)         \
+    do {                                                             \
+        (array)->data = malloc((data_size) * sizeof(*(const_data))); \
+        if ((array)->data != NULL) {                                 \
+            (array)->size = (data_size);                             \
+            (array)->capacity = (data_size);                         \
+            memcpy(                                                  \
+                (array)->data, (const_data),                         \
+                (data_size) * sizeof(*(const_data)));                \
+        } else {                                                     \
+            (array)->size = 0;                                       \
+            (array)->capacity = 0;                                   \
+        }                                                            \
+    } while (0)
+
+
 #define da_free(array)             \
     do {                           \
         if ((array)->data != NULL) \
@@ -49,6 +80,8 @@
     } while (0)
 
 #define da_at(array, index) ((array)->data[index])
+
+#define da_size(array) ((array)->size)
 
 #define da_foreach(array, idx, value)                                       \
     for (idx = 0; idx < (array)->size && ((value) = (array)->data[idx], 1); \

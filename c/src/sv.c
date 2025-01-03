@@ -1,5 +1,8 @@
 #include "sv.h"
 
+#include <string.h>
+#include <stdio.h>
+
 inline void sv_init(string_view_t* sv) {
     sv->data = NULL;
     sv->size = 0;
