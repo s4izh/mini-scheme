@@ -14,10 +14,18 @@ typedef enum {
 } scm_binding_type_t;
 
 typedef struct {
-    char *arg_names[SCM_BINDING_MAX_BINDING_SIZE];
+    char *arg_names[SCM_RUNTIME_MAX_BINDING_NAME_SIZE];
     u32  args;
     scm_ast_sexpr_t* sexpr;
 } scm_runtime_function_t;
+
+typedef struct {
+    scm_ast_sexpr_t* sexpr;
+} scm_runtime_list_t;
+
+typedef struct {
+    scm_ast_sexpr_t* sexpr;
+} scm_runtime_constant_t;
 
 typedef struct {
     scm_binding_type_t type;

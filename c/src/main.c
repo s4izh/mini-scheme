@@ -92,7 +92,8 @@ static bool evaluate_source(const char* filename, const char* src)
 
 #define HISTORY_FILE ".mscm_hist"
 #define HISTORY_MAX_SIZE 1000
-// #define HISTORY_FILE getenv("HOME") ? strcat(getenv("HOME"), "/.cache/mscm/history") : ".mscm_hist"
+// #define HISTORY_FILE getenv("HOME") ? strcat(getenv("HOME"),
+// "/.cache/mscm/history") : ".mscm_hist"
 
 static void repl()
 {
@@ -102,8 +103,7 @@ static void repl()
     scm_runtime_t runtime = {0};
     scm_runtime_init(&runtime);
 
-    while (true)
-    {
+    while (true) {
         char* line = readline("mscm> ");
         if (line == NULL || strcmp(line, "exit") == 0)
             break;
