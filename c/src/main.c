@@ -42,19 +42,22 @@ static void usage(char* name)
     printf("Usage: %s [file.scm]\n", name);
 }
 
-static bool evaluate_source(const char* filename, const char* src)
+static bool scm_evaluate_source(
+    scm_runtime_t* runtime,
+    scm_lexer_t* lexer,
+    scm_parser_t* parser,
+    const char* filename,
+    const char* src)
 {
-    scm_lexer_t lexer = {0};
+    scm_lexer_set_source(lexer, filename, (const char*)src, strlen(src));
 
-    scm_lexer_init(&lexer, filename, (const char*)src, strlen(src));
-
-    da_token tokens;
+    da_token_ptr tokens;
     da_init(&tokens);
 
     printf("raw source code:\n%s\n", src);
 
-    scm_token_t token;
-    while ((token = scm_lexer_next_token(&lexer)).type != SCM_TOKEN_EOF) {
+    scm_token_t* token;
+    while ((token = scm_lexer_next_token(lexer))->type != SCM_TOKEN_EOF) {
         da_append(&tokens, token);
         // printf("generated: ");
         // scm_print_token(&token, true);
@@ -63,29 +66,18 @@ static bool evaluate_source(const char* filename, const char* src)
     da_append(&tokens, token);
 
     for (u32 i = 0; i < da_size(&tokens); ++i) {
-        scm_token_print(&da_at(&tokens, i), true);
+        scm_token_print(da_at(&tokens, i), true);
     }
 
-    scm_parser_t parser = {0};
+    // scm_parser_t parser = {0};
 
     printf("\n");
     printf("parsing...\n");
 
-    scm_program_t program = scm_parser_run(&parser, &tokens);
+    scm_ast_sexpr_t* root = scm_parser_run(parser, &tokens);
 
-    for (u32 i = 0; i < da_size(&program.list.sexprs); ++i) {
-        scm_ast_sexpr_t* sexpr = da_at(&program.list.sexprs, i);
-
-        printf("\n");
-        printf("\n");
-        printf("parse tree:\n");
-        scm_pretty_print_sexpr(sexpr);
-
-        printf("\n");
-        printf("\n");
-        printf("parse tree extra:\n");
-        scm_pretty_print_sexpr_extra(sexpr);
-    }
+    printf("full tree:\n");
+    scm_ast_sexpr_print(root);
 
     da_free(&tokens);
 
@@ -104,17 +96,26 @@ static void repl()
     read_history(HISTORY_FILE);
     stifle_history(HISTORY_MAX_SIZE);
 
+    scm_resources_t resources = {0};
+
+    scm_lexer_t lexer = {0};
+    scm_parser_t parser = {0};
     scm_runtime_t runtime = {0};
-    scm_runtime_init(&runtime);
+
+    scm_resources_init(&resources);
+
+    scm_lexer_init(&lexer, &resources);
+    scm_parser_init(&parser, &resources);
+    scm_runtime_init(&runtime, &resources);
 
     while (true) {
         char* line = readline("mscm> ");
         if (line == NULL || strcmp(line, "exit") == 0)
             break;
-
+        
         if (*line) {
             add_history(line);
-            evaluate_source("repl", line);
+            scm_evaluate_source(&runtime, &lexer, &parser, "repl", line);
         }
         free(line);
     }
@@ -132,7 +133,19 @@ static bool evaluate_file(const char* filename)
         return res;
     }
 
-    evaluate_source(filename, src);
+    scm_resources_t resources = {0};
+
+    scm_lexer_t lexer = {0};
+    scm_parser_t parser = {0};
+    scm_runtime_t runtime = {0};
+
+    scm_resources_init(&resources);
+
+    scm_lexer_init(&lexer, &resources);
+    scm_parser_init(&parser, &resources);
+    scm_runtime_init(&runtime, &resources);
+
+    scm_evaluate_source(&runtime, &lexer, &parser, filename, src);
 
     return true;
 }

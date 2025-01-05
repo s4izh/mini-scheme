@@ -1,6 +1,7 @@
 #ifndef __SCM_LEXER_H__
 #define __SCM_LEXER_H__
 
+#include "scm_resources.h"
 #include "types.h"
 #include "nfa.h"
 
@@ -28,7 +29,7 @@ typedef struct {
     u32 line;
 } scm_token_t;
 
-void scm_token_print(scm_token_t* tkn, bool only_token_type);
+void scm_token_print(scm_token_t* token, bool only_token_type);
 
 typedef enum {
     SCM_LEXER_NFA_START = 0,
@@ -57,10 +58,12 @@ typedef struct {
     u32 line;
     bool has_error;
     nfa_engine_t nfa;
+    scm_resources_t* resources;
 } scm_lexer_t;
 
-void scm_lexer_init(scm_lexer_t* lx, const char* filename, const char* src, u32 len);
-scm_token_t scm_lexer_next_token(scm_lexer_t* lx);
+void scm_lexer_init(scm_lexer_t* lexer, scm_resources_t* resources);
+void scm_lexer_set_source(scm_lexer_t* lexer, const char* filename, const char* src, u32 len);
+scm_token_t* scm_lexer_next_token(scm_lexer_t* lexer);
 
 // for the future parser
 // const char *special_forms[] = {
@@ -113,6 +116,6 @@ scm_token_t scm_lexer_next_token(scm_lexer_t* lx);
 #define SCM_LEXER_SLEEP ;
 #endif
 
-DA_DEFINE(scm_token_t, da_token);  
+DA_DEFINE(scm_token_t*, da_token_ptr);  
 
 #endif // __SCM_LEXER_H__

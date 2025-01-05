@@ -58,6 +58,6 @@ typedef struct {
     scm_environment_t env;
 } scm_runtime_t;
 
-void scm_runtime_init(scm_runtime_t* runtime);
+void scm_runtime_init(scm_runtime_t* runtime, scm_resources_t* resources);
 
 #endif // __SCM_RUNTIME_H__
