@@ -71,17 +71,21 @@ static bool evaluate_source(const char* filename, const char* src)
     printf("\n");
     printf("parsing...\n");
 
-    scm_ast_sexpr_t* root = scm_parser_run(&parser, &tokens);
+    scm_program_t program = scm_parser_run(&parser, &tokens);
 
-    printf("\n");
-    printf("parse tree:\n");
+    for (u32 i = 0; i < da_size(&program.list.sexprs); ++i) {
+        scm_ast_sexpr_t* sexpr = da_at(&program.list.sexprs, i);
 
-    scm_pretty_print_sexpr(root);
+        printf("\n");
+        printf("\n");
+        printf("parse tree:\n");
+        scm_pretty_print_sexpr(sexpr);
 
-    printf("\n");
-    printf("\n");
-    printf("parse tree extra:\n");
-    scm_pretty_print_sexpr_extra(root);
+        printf("\n");
+        printf("\n");
+        printf("parse tree extra:\n");
+        scm_pretty_print_sexpr_extra(sexpr);
+    }
 
     da_free(&tokens);
 

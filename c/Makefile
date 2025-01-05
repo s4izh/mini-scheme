@@ -29,3 +29,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 clean:
 	@rm -rvf $(SRC_DIR)/scm_lexer_generated.c
 	@rm -rvf $(BUILD_DIR)
+
+nix:
+	@rm result || exit 0
+	nix build .#mscm && ./result/bin/mscm

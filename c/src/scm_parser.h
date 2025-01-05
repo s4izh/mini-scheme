@@ -23,7 +23,8 @@ typedef struct {
     da_scm_ast_sexpr_ptr sexprs;
 } scm_ast_list_t;
 
-// s-expr
+// sexpr ::= <atom>
+//         |  '(' <sexpr>* ')'
 struct _scm_ast_sexpr_t {
     scm_ast_sexpr_type_t type;
     union {
@@ -32,14 +33,19 @@ struct _scm_ast_sexpr_t {
     } data;
 };
 
+// a program is just a list of sexpr
+// program ::= <sexpr*>
+typedef struct {
+    scm_ast_list_t list;
+} scm_program_t;
+
 typedef struct {
     scm_ast_sexpr_t* root;
     da_token* tokens;
     u32 pos;
-    da_scm_ast_sexpr sexprs; // linearly allocated sexpr
 } scm_parser_t;
 
-scm_ast_sexpr_t* scm_parser_run(scm_parser_t* parser, da_token* tokens);
+scm_program_t scm_parser_run(scm_parser_t* parser, da_token* tokens);
 
 void scm_pretty_print_sexpr(scm_ast_sexpr_t *sexpr);
 void scm_pretty_print_sexpr_extra(scm_ast_sexpr_t *sexpr);

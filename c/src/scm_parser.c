@@ -1,4 +1,5 @@
 #include "scm_parser.h"
+#include "ds.h"
 #include "scm_lexer.h"
 #include "sv.h"
 
@@ -82,8 +83,8 @@ static scm_ast_sexpr_t* scm_parser_create_atom(scm_parser_t* parser)
 
 static scm_ast_sexpr_t* scm_parse_s_expression(scm_parser_t* parser)
 {
-    // scm_parser_print_current_token(parser);
-    // printf("\n");
+    scm_parser_print_current_token(parser);
+    printf("\n");
 
     // printf("parsing sexpr...\n");
 
@@ -114,29 +115,43 @@ static scm_ast_sexpr_t* scm_parse_s_expression(scm_parser_t* parser)
 
             scm_parser_token_step_forward(parser);
         }
+        scm_parser_token_step_forward(parser);
 
         return list;
     }
     else {
-        printf("ERROR: unhandled token for the parser");
+        printf("ERROR: unhandled token for the parser\n");
+        sleep(1);
     }
 
     return NULL;
 }
 
-scm_ast_sexpr_t* scm_parser_run(scm_parser_t* parser, da_token* tokens)
+scm_program_t scm_parser_run(scm_parser_t* parser, da_token* tokens)
 {
-    parser->root = NULL;
     parser->tokens = tokens;
     parser->pos = 0;
 
-    parser->root = scm_parse_s_expression(parser);
+    scm_program_t program;
 
-    if (TOKEN_CURRENT_TYPE(parser) == SCM_TOKEN_EOF) {
-        printf("rarete, la última posición tendría que ser un token EOF");
+    while(TOKEN_CURRENT_TYPE(parser) != SCM_TOKEN_EOF)
+    {
+        scm_ast_sexpr_t* sexpr = scm_parse_s_expression(parser);
+        if (sexpr == NULL)
+            printf("null sexpr\n");
+
+        da_append(&program.list.sexprs, sexpr);
+
+        if (TOKEN_CURRENT_TYPE(parser) == SCM_TOKEN_RPAREN)
+            scm_parser_token_step_forward(parser);
     }
 
-    return parser->root;
+    if (TOKEN_CURRENT_TYPE(parser) != SCM_TOKEN_EOF) {
+        printf("rarete, la última posición tendría que ser un token EOF\n");
+        scm_token_print(TOKEN_CURRENT(parser), false);
+    }
+
+    return program;
 }
 
 static void scm_print_indent(int indent_level)
