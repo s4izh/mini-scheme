@@ -42,7 +42,7 @@ static void usage(char* name)
     printf("Usage: %s [file.scm]\n", name);
 }
 
-static bool scm_evaluate_source(
+static scm_error_t scm_evaluate_source(
     scm_runtime_t* runtime,
     scm_lexer_t* lexer,
     scm_parser_t* parser,
@@ -83,7 +83,7 @@ static bool scm_evaluate_source(
 
     printf("\n");
 
-    return true;
+    return (scm_error_t) { SCM_ERROR_NONE, NULL };
 }
 
 #define HISTORY_FILE ".mscm_hist"
@@ -93,6 +93,8 @@ static bool scm_evaluate_source(
 
 static void repl()
 {
+    scm_error_t err;
+
     read_history(HISTORY_FILE);
     stifle_history(HISTORY_MAX_SIZE);
 
@@ -102,11 +104,15 @@ static void repl()
     scm_parser_t parser = {0};
     scm_runtime_t runtime = {0};
 
-    scm_resources_init(&resources);
+    err = scm_resources_init(&resources);
+    if (err.type != SCM_ERROR_NONE) {
+        scm_error_print(&err);
+        return;
+    }
 
     scm_lexer_init(&lexer, &resources);
     scm_parser_init(&parser, &resources);
-    scm_runtime_init(&runtime, &resources);
+    scm_runtime_init(&runtime, &resources, SCM_RUNTIME_MODE_REPL);
 
     while (true) {
         char* line = readline("mscm> ");
@@ -115,7 +121,10 @@ static void repl()
         
         if (*line) {
             add_history(line);
-            scm_evaluate_source(&runtime, &lexer, &parser, "repl", line);
+            err = scm_evaluate_source(&runtime, &lexer, &parser, "repl", line);
+            if (err.type != SCM_ERROR_NONE) {
+                scm_error_print(&err);
+            }
         }
         free(line);
     }
@@ -143,7 +152,7 @@ static bool evaluate_file(const char* filename)
 
     scm_lexer_init(&lexer, &resources);
     scm_parser_init(&parser, &resources);
-    scm_runtime_init(&runtime, &resources);
+    scm_runtime_init(&runtime, &resources, SCM_RUNTIME_MODE_FILE);
 
     scm_evaluate_source(&runtime, &lexer, &parser, filename, src);
 

@@ -183,16 +183,15 @@ scm_ast_sexpr_t* scm_parser_run(scm_parser_t* parser, da_token_ptr* tokens)
 
     scm_ast_sexpr_t* root = scm_parser_create_root(parser);
 
-    while(TOKEN_CURRENT_TYPE(parser) != SCM_TOKEN_EOF)
-    {
+    while(TOKEN_CURRENT_TYPE(parser) != SCM_TOKEN_EOF) {
         scm_ast_sexpr_t* sexpr = scm_parse_s_expression(parser);
         if (sexpr == NULL)
             printf("null sexpr\n");
 
         da_append(&(root->data.root.sexprs), sexpr);
 
-        if (TOKEN_CURRENT_TYPE(parser) == SCM_TOKEN_RPAREN)
-            scm_parser_token_step_forward(parser);
+        // if (TOKEN_CURRENT_TYPE(parser) == SCM_TOKEN_RPAREN)
+        scm_parser_token_step_forward(parser);
     }
 
     if (TOKEN_CURRENT_TYPE(parser) != SCM_TOKEN_EOF) {

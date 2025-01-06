@@ -59,7 +59,6 @@
         }                                                            \
     } while (0)
 
-
 #define da_free(array)             \
     do {                           \
         if ((array)->data != NULL) \
@@ -78,6 +77,8 @@
         }                                                                      \
         (array)->data[(array)->size++] = (value);                              \
     } while (0)
+
+#define da_remove_last(array) ((array)->size--)
 
 #define da_at(array, index) ((array)->data[index])
 

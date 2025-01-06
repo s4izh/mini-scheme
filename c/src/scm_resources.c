@@ -78,7 +78,7 @@ error:
     return NULL;
 }
 
-void scm_resources_init(scm_resources_t* resources)
+scm_error_t scm_resources_init(scm_resources_t* resources)
 {
     void* tokens_data = malloc(TOKENS_IN_POOL * sizeof(scm_token_t));
     bool* tokens_bool = malloc(TOKENS_IN_POOL * sizeof(bool));
@@ -95,7 +95,7 @@ void scm_resources_init(scm_resources_t* resources)
     if (tokens_data == NULL || tokens_bool == NULL || sexprs_data == NULL || sexprs_bool == NULL)
         goto error;
     else
-        return;
+        return (scm_error_t) { SCM_ERROR_NONE, NULL };
 
 error:
     if (tokens_data != NULL)
@@ -110,5 +110,6 @@ error:
     if (sexprs_bool != NULL)
         free(sexprs_bool);
 
-    return;
+    return (scm_error_t) { SCM_ERROR_RESOURCE, "could not allocate memory for resources" };
+;
 }

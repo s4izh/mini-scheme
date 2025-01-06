@@ -45,19 +45,31 @@ typedef struct {
 
 DA_DEFINE(scm_binding_t, da_binding);
 
-typedef struct _scm_environment_t scm_environment_t;
-
-struct _scm_environment_t {
-    scm_environment_t* parent;
+typedef struct {
     da_binding bindings;
-};
+} scm_environment_t;
+
+typedef enum {
+    SCM_RUNTIME_MODE_REPL,
+    SCM_RUNTIME_MODE_FILE,
+} scm_runtime_mode_t;
+
+DA_DEFINE(scm_environment_t, da_environment);
 
 typedef struct {
-    scm_lexer_t lexer;
-    scm_parser_t parser;
-    scm_environment_t env;
+    da_environment environments;
+    scm_runtime_mode_t mode;
+    scm_resources_t* resources;
 } scm_runtime_t;
 
-void scm_runtime_init(scm_runtime_t* runtime, scm_resources_t* resources);
+void scm_runtime_init(scm_runtime_t* runtime, scm_resources_t* resources, scm_runtime_mode_t mode);
+
+scm_binding_t* scm_runtime_lookup_binding(scm_runtime_t* runtime, const char* name);
+
+void scm_runtime_push_environment(scm_runtime_t* runtime);
+
+void scm_runtime_pop_environment(scm_runtime_t* runtime);
+
+void scm_binding_free(scm_binding_t* binding);
 
 #endif // __SCM_RUNTIME_H__
