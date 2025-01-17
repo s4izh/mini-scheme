@@ -384,8 +384,8 @@ static const MunitSuite test_suite = {
 
 #include <stdlib.h>
 
-int main(int argc, char* argv[MUNIT_ARRAY_PARAM(argc + 1)]) {
-
+int main(int argc, char* argv[MUNIT_ARRAY_PARAM(argc + 1)])
+{
     scm_log_init();
     scm_log_set_level(LOG_ERROR);
     scm_log_timestamp_mode(0);
