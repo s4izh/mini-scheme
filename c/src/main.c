@@ -1,53 +1,25 @@
 #include "scm_lexer.h"
 #include "scm_parser.h"
+#include "scm_result.h"
 #include "scm_runtime.h"
+#include "scm_log.h"
 #include "ds.h"
-
-#include <stdlib.h>
-#include <stdio.h>
+#include "utils.h"
 
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <string.h>
 
-int file_to_string(const char* filename, char** buffer)
-{
-    FILE* file = fopen(filename, "r");
-    if (file == NULL) {
-        printf("error_t: could not open file %s\n", filename);
-        return EXIT_FAILURE;
-    }
-    fseek(file, 0, SEEK_END);
-    long length = ftell(file);
-    fseek(file, 0, SEEK_SET);
-    char* tmp;
-    tmp = malloc(length + 1);
-    if (tmp == NULL) {
-        printf("error_t: could not allocate memory\n");
-        return EXIT_FAILURE;
-    }
-    int read = fread(tmp, 1, length, file);
-    if (read != length) {
-        printf("error_t: could not read file %s\n", filename);
-        return EXIT_FAILURE;
-    }
-    tmp[length] = '\0';
-    *buffer = tmp;
-    fclose(file);
-    return 0;
-}
+#ifndef TEST_MODE
 
 static void usage(char* name)
 {
     printf("Usage: %s [file.scm]\n", name);
 }
 
-static scm_error_t scm_evaluate_source(
-    scm_runtime_t* runtime,
-    scm_lexer_t* lexer,
-    scm_parser_t* parser,
-    const char* filename,
-    const char* src)
+static scm_result_t scm_evaluate_source(
+    scm_runtime_t* runtime, scm_lexer_t* lexer, scm_parser_t* parser,
+    const char* filename, const char* src)
 {
     scm_lexer_set_source(lexer, filename, (const char*)src, strlen(src));
 
@@ -55,6 +27,8 @@ static scm_error_t scm_evaluate_source(
     da_init(&tokens);
 
     printf("raw source code:\n%s\n", src);
+
+    SCM_DEBUG("lexing start");
 
     scm_token_t* token;
     while ((token = scm_lexer_next_token(lexer))->type != SCM_TOKEN_EOF) {
@@ -65,16 +39,18 @@ static scm_error_t scm_evaluate_source(
     }
     da_append(&tokens, token);
 
+    SCM_DEBUG("lexing end");
+
     for (u32 i = 0; i < da_size(&tokens); ++i) {
         scm_token_print(da_at(&tokens, i), true);
     }
-
-    // scm_parser_t parser = {0};
-
     printf("\n");
-    printf("parsing...\n");
+
+    SCM_DEBUG("parsing start");
 
     scm_ast_sexpr_t* root = scm_parser_run(parser, &tokens);
+
+    SCM_DEBUG("parsing end");
 
     printf("full tree:\n");
     scm_ast_sexpr_print(root);
@@ -83,7 +59,14 @@ static scm_error_t scm_evaluate_source(
 
     printf("\n");
 
-    return (scm_error_t) { SCM_ERROR_NONE, NULL };
+    return scm_runtime_eval(runtime, root);
+    // if (SCM_RESULT_IS_ERR(res)) {
+    //     scm_err_print(&res.data.err);
+    // } else {
+    //     scm_ok_print(&res.data.ok);
+    // }
+
+    // return SCM_RESULT_OK(SCM_OK_VOID, NULL);
 }
 
 #define HISTORY_FILE ".mscm_hist"
@@ -93,23 +76,21 @@ static scm_error_t scm_evaluate_source(
 
 static void repl()
 {
-    scm_error_t err;
+    scm_result_t res;
 
     read_history(HISTORY_FILE);
     stifle_history(HISTORY_MAX_SIZE);
 
     scm_resources_t resources = {0};
-
     scm_lexer_t lexer = {0};
     scm_parser_t parser = {0};
     scm_runtime_t runtime = {0};
 
-    err = scm_resources_init(&resources);
-    if (err.type != SCM_ERROR_NONE) {
-        scm_error_print(&err);
+    res = scm_resources_init(&resources);
+    if (SCM_RESULT_IS_ERR(res)) {
+        scm_result_print(&res);
         return;
     }
-
     scm_lexer_init(&lexer, &resources);
     scm_parser_init(&parser, &resources);
     scm_runtime_init(&runtime, &resources, SCM_RUNTIME_MODE_REPL);
@@ -118,58 +99,71 @@ static void repl()
         char* line = readline("mscm> ");
         if (line == NULL || strcmp(line, "exit") == 0)
             break;
-        
+
         if (*line) {
             add_history(line);
-            err = scm_evaluate_source(&runtime, &lexer, &parser, "repl", line);
-            if (err.type != SCM_ERROR_NONE) {
-                scm_error_print(&err);
+            res = scm_evaluate_source(&runtime, &lexer, &parser, "repl", line);
+            if (SCM_RESULT_IS_ERR(res)) {
+                // in case we want to do anything else
+                scm_result_print(&res);
+            } else {
+                scm_result_print(&res);
             }
         }
-        free(line);
+        // free(line);
     }
 
     write_history(HISTORY_FILE);
 }
 
-static bool evaluate_file(const char* filename)
+static int evaluate_file(const char* filename)
 {
-    int res;
+    int ret;
     char* src = NULL;
+    scm_result_t res;
 
-    res = file_to_string(filename, &src);
-    if (res != 0) {
-        return res;
+    ret = file_to_string(filename, &src);
+    if (ret != 0) {
+        return ret;
     }
 
     scm_resources_t resources = {0};
-
     scm_lexer_t lexer = {0};
     scm_parser_t parser = {0};
     scm_runtime_t runtime = {0};
 
-    scm_resources_init(&resources);
-
+    res = scm_resources_init(&resources);
+    if (SCM_RESULT_IS_ERR(res)) {
+        scm_result_print(&res);
+        return EXIT_FAILURE;
+    }
     scm_lexer_init(&lexer, &resources);
     scm_parser_init(&parser, &resources);
     scm_runtime_init(&runtime, &resources, SCM_RUNTIME_MODE_FILE);
 
-    scm_evaluate_source(&runtime, &lexer, &parser, filename, src);
+    res = scm_evaluate_source(&runtime, &lexer, &parser, filename, src);
+    if (SCM_RESULT_IS_ERR(res)) {
+        scm_result_print(&res);
+        return EXIT_FAILURE;
+    };
 
-    return true;
+    return EXIT_SUCCESS;
 }
 
 int main(int argc, char* argv[])
 {
+    scm_log_init();
+    scm_log_set_level(LOG_DEBUG);
+    scm_log_timestamp_mode(true);
+
     if (argc == 1) {
         repl();
-    } else if (argc == 2) {
-        if (!evaluate_file(argv[1]))
-            return EXIT_FAILURE;
         return EXIT_SUCCESS;
+    } else if (argc == 2) {
+        return evaluate_file(argv[1]);
     } else {
         usage(argv[0]);
         return EXIT_FAILURE;
     }
-    return 0;
 }
+#endif

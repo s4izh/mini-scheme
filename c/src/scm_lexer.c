@@ -1,15 +1,16 @@
-#include "scm_lexer.h"
-#include <stdio.h>
-#include <unistd.h>
 #include "nfa.h"
+#include "scm_lexer.h"
 #include "scm_resources.h"
 
-#define __STRING_VIEW_IMPLEMENTATION__
+#include <stdio.h>
+#include <unistd.h>
+
 #include "sv.h"
+#include "scm_log.h"
 
 static inline int is_digit(char c)
 {
-   return (c >= '0' && c <= '9');
+    return (c >= '0' && c <= '9');
 }
 
 static inline int is_whitespace(char c)
@@ -41,42 +42,28 @@ static u32 scm_lexer_epsilon_cb(nfa_engine_t* nfa, void* user_data)
     scm_lexer_t* lexer = (scm_lexer_t*)user_data;
 
     switch (nfa->state_current) {
-        case SCM_LEXER_NFA_QUOTE_0:
-        {
+        case SCM_LEXER_NFA_QUOTE_0: {
+            return SCM_LEXER_NFA_QUOTE_A;
+        };
+        case SCM_LEXER_NFA_QUASIQUOTE_0: {
+            return SCM_LEXER_NFA_QUASIQUOTE_A;
+        };
+        case SCM_LEXER_NFA_LITERAL_NUMBER_0: {
             char c = scm_lexer_peek(lexer);
-            if (is_paren(c) || c == '\"')
-            {
-                return SCM_LEXER_NFA_QUOTE_A;
-            }
-        }
-        break;
-        case SCM_LEXER_NFA_QUASIQUOTE_0:
-        {
-            char c = scm_lexer_peek(lexer);
-            if (is_paren(c) || c == '\"')
-            {
-                return SCM_LEXER_NFA_QUASIQUOTE_A;
-            }
-        }
-        break;
-        case SCM_LEXER_NFA_LITERAL_NUMBER_0:
-        {
-            char c = scm_lexer_peek(lexer);
-            if (is_paren(c) || c == '\"' || is_whitespace(c))
-            {
+            if (is_paren(c) || c == '\"' || is_whitespace(c) ||
+                c == 0 /* EOF */) {
                 return SCM_LEXER_NFA_LITERAL_NUMBER_A;
             }
-        }
-        break;
-        case SCM_LEXER_NFA_IDENTIFIER_0:
-        {
+            break;
+        };
+        case SCM_LEXER_NFA_IDENTIFIER_0: {
             char c = scm_lexer_peek(lexer);
-            if (is_paren(c) || c == '\"' || is_whitespace(c))
-            {
+            if (is_paren(c) || c == '\"' || is_whitespace(c) ||
+                c == 0 /* EOF */) {
                 return SCM_LEXER_NFA_IDENTIFIER_A;
             }
-        }
-        break;
+            break;
+        };
     }
     return nfa->state_current;
 }
@@ -108,6 +95,7 @@ static const char* token_type_to_str(scm_token_type_t token)
 
 static const char* nfa_state_to_str(scm_lexer_nfa_state_t state)
 {
+    // clang-format off
     switch (state) {
         case SCM_LEXER_NFA_START:                return "SCM_LEXER_NFA_START";
         case SCM_LEXER_NFA_QUASIQUOTE_0:         return "SCM_LEXER_NFA_QUASIQUOTE_0";
@@ -126,45 +114,48 @@ static const char* nfa_state_to_str(scm_lexer_nfa_state_t state)
         case SCM_LEXER_NFA_NUM_STATES:           return "SCM_LEXER_NFA_NUM_STATES";
         default:                                 return "UNKNOWN_STATE";
     }
+    // clang-format on
 }
 
 static scm_token_t* scm_create_token(
     scm_lexer_t* lexer, scm_token_type_t type, u32 pos_start, u32 pos_end)
 {
     string_view_t sv = {lexer->src + pos_start, pos_end - pos_start + 1};
-    scm_token_t* token = scm_resources_allocate_token(lexer->resources);
+    scm_token_t* token = scm_resources_alloc_token(lexer->resources);
     *token = (scm_token_t){type, sv, lexer->line};
     return token;
 }
 
 static scm_token_t* scm_generate_token(
-    scm_lexer_t* lexer, scm_lexer_nfa_state_t nfa_state, u32 pos_start, u32 pos_end)
+    scm_lexer_t* lexer, scm_lexer_nfa_state_t nfa_state, u32 start, u32 end)
 {
+    // clang-format off
     switch (nfa_state) {
         case SCM_LEXER_NFA_QUASIQUOTE_A:
-            return scm_create_token(lexer, SCM_TOKEN_QUASIQUOTE, pos_start, pos_end);
+            return scm_create_token(lexer, SCM_TOKEN_QUASIQUOTE, start, end);
 
         case SCM_LEXER_NFA_QUOTE_A:
-            return scm_create_token(lexer, SCM_TOKEN_QUOTE, pos_start, pos_end);
+            return scm_create_token(lexer, SCM_TOKEN_QUOTE, start, end);
 
         case SCM_LEXER_NFA_LP_A:
-            return scm_create_token(lexer, SCM_TOKEN_LPAREN, pos_start, pos_end);
+            return scm_create_token(lexer, SCM_TOKEN_LPAREN, start, end);
 
         case SCM_LEXER_NFA_RP_A:
-            return scm_create_token(lexer, SCM_TOKEN_RPAREN, pos_start, pos_end);
+            return scm_create_token(lexer, SCM_TOKEN_RPAREN, start, end);
 
         case SCM_LEXER_NFA_IDENTIFIER_A:
-            return scm_create_token(lexer, SCM_TOKEN_IDENTIFIER, pos_start, pos_end);
+            return scm_create_token(lexer, SCM_TOKEN_IDENTIFIER, start, end);
 
         case SCM_LEXER_NFA_LITERAL_NUMBER_A:
-            return scm_create_token(lexer, SCM_TOKEN_LITERAL_NUMBER, pos_start, pos_end);
+            return scm_create_token(lexer, SCM_TOKEN_LITERAL_NUMBER, start, end);
 
         case SCM_LEXER_NFA_LITERAL_STRING_A:
-            return scm_create_token(lexer, SCM_TOKEN_LITERAL_STRING, pos_start, pos_end);
+            return scm_create_token(lexer, SCM_TOKEN_LITERAL_STRING, start, end);
 
         default:
-            return scm_create_token(lexer, SCM_TOKEN_UNKNOWN, 0, pos_end);
+            return scm_create_token(lexer, SCM_TOKEN_UNKNOWN, 0, end);
     }
+    // clang-format on
 }
 
 scm_token_t* scm_lexer_next_token(scm_lexer_t* lexer)
@@ -181,7 +172,7 @@ scm_token_t* scm_lexer_next_token(scm_lexer_t* lexer)
     }
 
     if (lexer->pos >= lexer->len) {
-        return scm_create_token(lexer, SCM_TOKEN_EOF, lexer->pos, lexer->pos);
+        return scm_create_token(lexer, SCM_TOKEN_EOF, 0, -1);
     }
 
     nfa_restart(&lexer->nfa, SCM_LEXER_NFA_START);
@@ -201,11 +192,15 @@ scm_token_t* scm_lexer_next_token(scm_lexer_t* lexer)
     lexer->pos++;
 
     switch (conclusion) {
-        case NFA_ACCEPT:
-            return scm_generate_token(lexer, lexer->nfa.state_current, pos_start, pos_end);
+        case NFA_ACCEPT: {
+            return scm_generate_token(
+                lexer, lexer->nfa.state_current, pos_start, pos_end);
+        };
         case NFA_REJECT:
-        default:
-            return scm_create_token(lexer, SCM_TOKEN_UNKNOWN, pos_start, pos_end);
+        default: {
+            return scm_create_token(
+                lexer, SCM_TOKEN_UNKNOWN, pos_start, pos_end);
+        };
     }
 }
 
@@ -233,61 +228,74 @@ void scm_lexer_init(scm_lexer_t* lexer, scm_resources_t* resources)
 
     lexer->resources = resources;
 
-    if (da_size(&lexer->nfa.states) == SCM_LEXER_NFA_NUM_STATES)
-    {
+    if (da_size(&lexer->nfa.states) == SCM_LEXER_NFA_NUM_STATES) {
         printf("nfa already initialized\n");
         return;
     }
 
     nfa_init(&lexer->nfa, SCM_LEXER_NFA_NUM_STATES, &nfa_state_to_str, lexer);
 
+    // clang-format off
+
     // STATES
     nfa_configure_state(&lexer->nfa, SCM_LEXER_NFA_START, NFA_CONTINUE, NULL, NULL);
-
     nfa_configure_state(&lexer->nfa, SCM_LEXER_NFA_QUOTE_0, NFA_CONTINUE, NULL, &scm_lexer_epsilon_cb);
     nfa_configure_state(&lexer->nfa, SCM_LEXER_NFA_QUASIQUOTE_0, NFA_CONTINUE, NULL, &scm_lexer_epsilon_cb);
-
     nfa_configure_state(&lexer->nfa, SCM_LEXER_NFA_LP_A, NFA_ACCEPT, NULL, NULL);
     nfa_configure_state(&lexer->nfa, SCM_LEXER_NFA_RP_A, NFA_ACCEPT, NULL, NULL);
-
     nfa_configure_state(&lexer->nfa, SCM_LEXER_NFA_IDENTIFIER_0, NFA_CONTINUE, NULL, &scm_lexer_epsilon_cb);
     nfa_configure_state(&lexer->nfa, SCM_LEXER_NFA_LITERAL_NUMBER_0, NFA_CONTINUE, NULL, &scm_lexer_epsilon_cb);
     nfa_configure_state(&lexer->nfa, SCM_LEXER_NFA_LITERAL_STRING_0, NFA_CONTINUE, NULL, NULL);
     nfa_configure_state(&lexer->nfa, SCM_LEXER_NFA_LITERAL_STRING_1, NFA_CONTINUE, NULL, NULL);
-
     nfa_configure_state(&lexer->nfa, SCM_LEXER_NFA_QUOTE_A, NFA_ACCEPT, NULL, NULL);
     nfa_configure_state(&lexer->nfa, SCM_LEXER_NFA_QUASIQUOTE_A, NFA_ACCEPT, NULL, NULL);
 
     // TRANSITIONS
-    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_START, "'", SCM_LEXER_NFA_QUOTE_0);
-    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_START, "(", SCM_LEXER_NFA_LP_A);
-    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_START, ")", SCM_LEXER_NFA_RP_A);
-    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_START, "`", SCM_LEXER_NFA_QUASIQUOTE_0);
-    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_START, SCM_IDENTIFIERS_BASE, SCM_LEXER_NFA_IDENTIFIER_0);
-    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_START, SCM_NUMBERS, SCM_LEXER_NFA_LITERAL_NUMBER_0);
-    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_START, SCM_NUMBERS, SCM_LEXER_NFA_LITERAL_STRING_0);
+    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_START, "'",
+    // SCM_LEXER_NFA_QUOTE_0); nfa_add_transition(&lexer->nfa,
+    // SCM_LEXER_NFA_START, "(", SCM_LEXER_NFA_LP_A);
+    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_START, ")",
+    // SCM_LEXER_NFA_RP_A); nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_START,
+    // "`", SCM_LEXER_NFA_QUASIQUOTE_0); nfa_add_transition(&lexer->nfa,
+    // SCM_LEXER_NFA_START, SCM_IDENTIFIERS_BASE, SCM_LEXER_NFA_IDENTIFIER_0);
+    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_START, SCM_NUMBERS,
+    // SCM_LEXER_NFA_LITERAL_NUMBER_0); nfa_add_transition(&lexer->nfa,
+    // SCM_LEXER_NFA_START, SCM_NUMBERS, SCM_LEXER_NFA_LITERAL_STRING_0);
 
-    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_IDENTIFIER_0, SCM_IDENTIFIERS_ALL, SCM_LEXER_NFA_IDENTIFIER_0);
+    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_IDENTIFIER_0,
+    // SCM_IDENTIFIERS_ALL, SCM_LEXER_NFA_IDENTIFIER_0);
 
-    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_LITERAL_NUMBER_0, SCM_LETTERS, SCM_LEXER_NFA_IDENTIFIER_0);
-    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_LITERAL_NUMBER_0, SCM_NUMBERS, SCM_LEXER_NFA_LITERAL_NUMBER_0);
-    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_LITERAL_NUMBER_0, SCM_WHITESPACE, SCM_LEXER_NFA_LITERAL_NUMBER_A);
-    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_LITERAL_STRING_0, SCM_EOS, SCM_LEXER_NFA_INVALID_R);
-    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_LITERAL_STRING_0, SCM_LITERAL_STRING, SCM_LEXER_NFA_LITERAL_STRING_0);
-    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_LITERAL_STRING_0, SCM_LITERAL_STRING_ESCAPE, SCM_LEXER_NFA_LITERAL_STRING_1);
-    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_LITERAL_STRING_0, SCM_QUOTATION, SCM_LEXER_NFA_LITERAL_STRING_A);
+    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_LITERAL_NUMBER_0,
+    // SCM_LETTERS, SCM_LEXER_NFA_IDENTIFIER_0); nfa_add_transition(&lexer->nfa,
+    // SCM_LEXER_NFA_LITERAL_NUMBER_0, SCM_NUMBERS,
+    // SCM_LEXER_NFA_LITERAL_NUMBER_0); nfa_add_transition(&lexer->nfa,
+    // SCM_LEXER_NFA_LITERAL_NUMBER_0, SCM_WHITESPACE,
+    // SCM_LEXER_NFA_LITERAL_NUMBER_A); nfa_add_transition(&lexer->nfa,
+    // SCM_LEXER_NFA_LITERAL_STRING_0, SCM_EOS, SCM_LEXER_NFA_INVALID_R);
+    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_LITERAL_STRING_0,
+    // SCM_LITERAL_STRING, SCM_LEXER_NFA_LITERAL_STRING_0);
+    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_LITERAL_STRING_0,
+    // SCM_LITERAL_STRING_ESCAPE, SCM_LEXER_NFA_LITERAL_STRING_1);
+    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_LITERAL_STRING_0,
+    // SCM_QUOTATION, SCM_LEXER_NFA_LITERAL_STRING_A);
 
-    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_LITERAL_STRING_1, SCM_LITERAL_STRING_VALID_ESCAPED, SCM_LEXER_NFA_LITERAL_STRING_1);
+    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_LITERAL_STRING_1,
+    // SCM_LITERAL_STRING_VALID_ESCAPED, SCM_LEXER_NFA_LITERAL_STRING_1);
 
-    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_QUASIQUOTE_0, SCM_LETTERS_NUMBERS, SCM_LEXER_NFA_QUASIQUOTE_A);
-    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_QUOTE_0, SCM_LETTERS_NUMBERS, SCM_LEXER_NFA_QUOTE_A);
+    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_QUASIQUOTE_0,
+    // SCM_LETTERS_NUMBERS, SCM_LEXER_NFA_QUASIQUOTE_A);
+    // nfa_add_transition(&lexer->nfa, SCM_LEXER_NFA_QUOTE_0,
+    // SCM_LETTERS_NUMBERS, SCM_LEXER_NFA_QUOTE_A);
+
+    // clang-format on
 
     nfa_generated_register_transitions(&lexer->nfa);
 
-    // printf("added %d states\n", SCM_LEXER_NFA_NUM_STATES);
+    // nfa_check_indeterminations(&lexer->nfa);
 }
 
-void scm_lexer_set_source(scm_lexer_t* lexer, const char* filename, const char* src, u32 len)
+void scm_lexer_set_source(
+    scm_lexer_t* lexer, const char* filename, const char* src, u32 len)
 {
     lexer->filename = filename;
     lexer->src = src;

@@ -5,8 +5,11 @@
 #include "types.h"
 #include "nfa.h"
 
+typedef struct _scm_token_t scm_token_t;
+typedef struct _scm_lexer_t scm_lexer_t;
+
 typedef enum {
-    SCM_TOKEN_LPAREN,
+    SCM_TOKEN_LPAREN = 0,
     SCM_TOKEN_RPAREN,
     // SCM_TOKEN_IF,
     // SCM_TOKEN_COND,
@@ -23,11 +26,11 @@ typedef enum {
     SCM_TOKEN_UNKNOWN,
 } scm_token_type_t;
 
-typedef struct {
+struct _scm_token_t {
     scm_token_type_t type;
     string_view_t sv;
     u32 line;
-} scm_token_t;
+};
 
 void scm_token_print(scm_token_t* token, bool only_token_type);
 
@@ -50,7 +53,7 @@ typedef enum {
     SCM_LEXER_NFA_NUM_STATES,
 } scm_lexer_nfa_state_t;
 
-typedef struct {
+struct _scm_lexer_t {
     const char* filename;
     const char* src;
     u32 len;
@@ -59,7 +62,7 @@ typedef struct {
     bool has_error;
     nfa_engine_t nfa;
     scm_resources_t* resources;
-} scm_lexer_t;
+};
 
 void scm_lexer_init(scm_lexer_t* lexer, scm_resources_t* resources);
 void scm_lexer_set_source(scm_lexer_t* lexer, const char* filename, const char* src, u32 len);

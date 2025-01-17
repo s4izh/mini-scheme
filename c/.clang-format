@@ -21,6 +21,10 @@ AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: false
 BinPackArguments: true
 BinPackParameters: true
+# AllowAllParametersOfDeclarationOnNextLine: false  # Forces function declaration parameters to new lines
+AllowAllArgumentsOnNextLine: false  # Forces function call arguments to new lines
+# BinPackParameters: false  # Forces function arguments to be split into multiple lines
+# BinPackArguments: false   # Forces function call arguments to be split into multiple lines
 BraceWrapping:
   AfterClass:      false
   AfterControlStatement: false
@@ -38,7 +42,7 @@ BreakBeforeBraces: Custom
 # BreakBeforeBraces: Allman
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializersBeforeComma: false
-ColumnLimit:     80
+ColumnLimit:     100
 CommentPragmas:  '^ IWYU pragma:'
 CompactNamespaces: false
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
@@ -59,7 +63,7 @@ IncludeCategories:
   - Regex:           '.*'
     Priority:        3
 IncludeIsMainRegex: '$'
-IndentCaseLabels: false
+IndentCaseLabels: true
 IndentWidth:     4
 IndentWrappedFunctionNames: false
 KeepEmptyLinesAtTheStartOfBlocks: false
@@ -96,5 +100,11 @@ SpacesInSquareBrackets: false
 Standard:        Auto
 TabWidth:        4
 UseTab:          Never
+
+# IndentCaseLabels: false  # Keep case labels unindented
+# AllowShortCaseLabelsOnASingleLine: true  # Allow short case labels on one line
+# BreakBeforeBraces: Custom  # Prevent unnecessary line breaks
+# BraceWrapping:
+#   AfterCaseLabel: false  # Prevent case labels from forcing new lines
 ...
 

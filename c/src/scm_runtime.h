@@ -3,73 +3,48 @@
 
 #include "ds.h"
 #include "scm_parser.h"
-#include "scm_builtin.h"
+#include "scm_types.h"
 
-#define SCM_RUNTIME_MAX_BINDING_NAME_SIZE 16
+typedef struct _scm_binding_t scm_binding_t;
+typedef struct _scm_environment_t scm_environment_t;
+typedef struct _scm_runtime_t scm_runtime_t;
 
-typedef enum {
-    SCM_BINDING_FUNCTION,
-    SCM_BINDING_LIST,
-    SCM_BINDING_BUILTIN,
-} scm_binding_type_t;
+DA_DEFINE(scm_environment_t, da_environment);
+DA_DEFINE(scm_binding_t*, da_binding_ptr);
 
-typedef struct {
-    char *arg_names[SCM_RUNTIME_MAX_BINDING_NAME_SIZE];
-    u32  args;
-    scm_ast_sexpr_t* sexpr;
-} scm_runtime_function_t;
+struct _scm_binding_t {
+    scm_token_t* token;
+    scm_type_t type;
+};
 
-typedef struct {
-    scm_ast_sexpr_t* sexpr;
-} scm_runtime_list_t;
-
-typedef struct {
-    scm_ast_sexpr_t* sexpr;
-} scm_runtime_constant_t;
-
-typedef struct {
-    scm_binding_type_t type;
-    char name[SCM_RUNTIME_MAX_BINDING_NAME_SIZE];
-
-    u32 min_args;
-    u32 max_args;
-
-    union {
-        scm_runtime_constant_t constant;
-        scm_runtime_function_t function;
-        scm_runtime_list_t list;
-        scm_builtin_t builtin;
-    } data;
-
-} scm_binding_t;
-
-DA_DEFINE(scm_binding_t, da_binding);
-
-typedef struct {
-    da_binding bindings;
-} scm_environment_t;
+struct _scm_environment_t {
+    da_binding_ptr bindings;
+};
 
 typedef enum {
     SCM_RUNTIME_MODE_REPL,
     SCM_RUNTIME_MODE_FILE,
 } scm_runtime_mode_t;
 
-DA_DEFINE(scm_environment_t, da_environment);
-
-typedef struct {
-    da_environment environments;
+struct _scm_runtime_t {
     scm_runtime_mode_t mode;
+    da_environment environments;
     scm_resources_t* resources;
-} scm_runtime_t;
+};
 
 void scm_runtime_init(scm_runtime_t* runtime, scm_resources_t* resources, scm_runtime_mode_t mode);
 
-scm_binding_t* scm_runtime_lookup_binding(scm_runtime_t* runtime, const char* name);
+scm_binding_t* scm_runtime_lookup_binding(scm_runtime_t* runtime, const char* name, u32 size);
 
 void scm_runtime_push_environment(scm_runtime_t* runtime);
 
 void scm_runtime_pop_environment(scm_runtime_t* runtime);
 
 void scm_binding_free(scm_binding_t* binding);
+
+scm_result_t scm_runtime_eval(scm_runtime_t* runtime, scm_ast_sexpr_t* sexpr);
+
+void scm_type_print(scm_type_t* type);
+
 
 #endif // __SCM_RUNTIME_H__

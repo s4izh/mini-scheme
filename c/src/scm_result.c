@@ -1,29 +1,29 @@
-#include "scm_error.h"
+#include "scm_result.h"
 
 #include <stdio.h>
 
-void scm_error_print(scm_error_t* err) {
-    printf("ERROR: ");
+void scm_err_print(scm_err_t* err) {
+    printf("ERR: ");
     switch (err->type) {
-        case SCM_ERROR_NONE:
+        case SCM_ERR_NONE:
             printf("No error");
             break;
-        case SCM_ERROR_GENERIC:
+        case SCM_ERR_GENERIC:
             printf("Generic error");
             break;
-        case SCM_ERROR_RESOURCE:
+        case SCM_ERR_RESOURCE:
             printf("Generic error");
             break;
-        case SCM_ERROR_SYNTAX:
+        case SCM_ERR_SYNTAX:
             printf("Syntax error");
             break;
-        case SCM_ERROR_SEMANTIC:
+        case SCM_ERR_SEMANTIC:
             printf("Semantic error");
             break;
-        case SCM_ERROR_RUNTIME:
+        case SCM_ERR_RUNTIME:
             printf("Runtime error");
             break;
-        case SCM_ERROR_TODO:
+        case SCM_ERR_TODO:
             printf("TODO error");
             break;
         default:
@@ -37,3 +37,14 @@ void scm_error_print(scm_error_t* err) {
     printf("\n");
 }
 
+void scm_ok_print(scm_ok_t* ok)
+{
+}
+
+void scm_result_print(scm_result_t* res)
+{
+    if (res->type == SCM_RESULT_OK)
+        scm_ok_print(&res->data.ok);
+    else
+        scm_err_print(&res->data.err);
+}

@@ -3,15 +3,12 @@
 
 #include "types.h"
 
-typedef enum {
-    SCM_BUILTIN_DEFINE,
-    SCM_BUILTIN_IF,
-    SCM_BUILTIN_COND,
-} scm_builtin_type_t;
+typedef void (*scm_builtin_func_t) (void*, void** args, u32 num);
 
 typedef struct {
-    scm_builtin_type_t type;
-    void (*func)(void** args, u32 num);
+    u32 min_args;
+    u32 max_args;
+    scm_builtin_func_t func;
 } scm_builtin_t;
 
 #endif // __SCM_BUILTIN_H__

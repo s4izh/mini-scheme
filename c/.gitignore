@@ -2,3 +2,4 @@ build
 .direnv
 .mscm_hist
 result
+.cache

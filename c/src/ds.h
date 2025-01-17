@@ -8,25 +8,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define DA_DEFINE(type, typename)       \
-    typedef struct {                    \
-        type* data;                     \
-        size_t size;                    \
-        size_t capacity;                \
-    } typename                          \
+#define DA_DEFINE(type, typename) \
+    typedef struct {              \
+        type* data;               \
+        size_t size;              \
+        size_t capacity;          \
+    } typename
 
-#define da_init(array)         \
-    do {                       \
-        (array)->data = NULL;  \
-        (array)->size = 0;     \
-        (array)->capacity = 0; \
+#define da_init(array)                               \
+    do {                                             \
+        (array)->data = NULL;                        \
+        (array)->size = 0;                           \
+        (array)->capacity = 0;                       \
     } while (0)
 
-#define da_init_with_preallocation(array, n)                  \
-    do {                                                      \
-        (array)->data = malloc((n) * sizeof(*(array)->data)); \
-        (array)->size = 0;                                    \
-        (array)->capacity = (n);                              \
+// one shouldn't append to this array, just set a given index if its valid
+#define da_init_with_zeroed_n_elements(array, n)                  \
+    do {                                                          \
+        if (n == 0) {                                             \
+            (array)->data = NULL;                                 \
+        } else {                                                  \
+            (array)->data = malloc((n) * sizeof(*(array)->data)); \
+            memset((array)->data, 0, sizeof(*(array)->data) * n); \
+        }                                                         \
+        (array)->size = n;                                        \
+        (array)->capacity = (n);                                  \
     } while (0)
 
 #define da_copy(from, to)                                              \
@@ -44,19 +50,33 @@
         }                                                              \
     } while (0)
 
-#define da_create_from_c_array(array, const_data, data_size)         \
-    do {                                                             \
-        (array)->data = malloc((data_size) * sizeof(*(const_data))); \
-        if ((array)->data != NULL) {                                 \
-            (array)->size = (data_size);                             \
-            (array)->capacity = (data_size);                         \
-            memcpy(                                                  \
-                (array)->data, (const_data),                         \
-                (data_size) * sizeof(*(const_data)));                \
-        } else {                                                     \
-            (array)->size = 0;                                       \
-            (array)->capacity = 0;                                   \
-        }                                                            \
+// #define da_create_from_c_array(array, const_data, data_size, element_size)   \
+//     do {                                                                     \
+//         (array)->data = malloc((data_size) * element_size);                  \
+//         if ((array)->data != NULL) {                                         \
+//             (array)->size = (data_size);                                     \
+//             (array)->capacity = (data_size);                                 \
+//             memcpy((array)->data, (const_data), (data_size) * element_size); \
+//             printf("from c size %zu\n", (array)->size); \
+//         } else {                                                             \
+//             (array)->size = 0;                                               \
+//             (array)->capacity = 0;                                           \
+//         }                                                                    \
+//     } while (0)
+
+#define da_create_from_c_array(array, const_data, data_size)              \
+    do {                                                                  \
+        (array)->data = malloc((data_size) * sizeof(*(array)->data));     \
+        if ((array)->data != NULL) {                                      \
+            (array)->size = (data_size);                                  \
+            (array)->capacity = (data_size);                              \
+            memcpy(                                                       \
+                (array)->data, (const_data),                              \
+                (data_size) * sizeof(*(array)->data));                    \
+        } else {                                                          \
+            (array)->size = 0;                                            \
+            (array)->capacity = 0;                                        \
+        }                                                                 \
     } while (0)
 
 #define da_free(array)             \
@@ -68,25 +88,44 @@
         (array)->capacity = 0;     \
     } while (0)
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsizeof-pointer-div"
 #define da_append(array, value)                                                \
     do {                                                                       \
         if ((array)->size >= (array)->capacity) {                              \
-            (array)->capacity = (array)->capacity ? (array)->capacity * 2 : 1; \
-            (array)->data = realloc(                                           \
-                (array)->data, (array)->capacity * sizeof(*(array)->data));    \
+            size_t new_capacity =                                              \
+                (array)->capacity ? (array)->capacity * 2 : 1;                 \
+            void* tmp =                                                        \
+                realloc((array)->data, new_capacity * sizeof(*(array)->data)); \
+            if (tmp != NULL) {                                                 \
+                (array)->data = tmp;                                           \
+                (array)->capacity = new_capacity;                              \
+            } else {                                                           \
+                fprintf(stderr, "Error: realloc failed in da_append.\n");      \
+            }                                                                  \
         }                                                                      \
         (array)->data[(array)->size++] = (value);                              \
     } while (0)
+#pragma GCC diagnostic pop
 
-#define da_remove_last(array) ((array)->size--)
+// #define da_remove_last(array) ((array)->size--)
+
+#define da_remove_last(array) \
+    ((array)->size > 0 ? --(array)->size : (array)->size)
+// #define da_at(array, index) ((array)->data != NULL && (index) < (array)->size
+// ? (array)->data[index] : NULL)
 
 #define da_at(array, index) ((array)->data[index])
 
 #define da_size(array) ((array)->size)
 
-#define da_foreach(array, idx, value)                                       \
-    for (idx = 0; idx < (array)->size && ((value) = (array)->data[idx], 1); \
-         idx++)
+// #define da_foreach(array, idx, value)                                       \
+//     for (idx = 0; idx < (array)->size && ((value) = (array)->data[idx], 1); \
+//          idx++)
+
+#define da_foreach(array, idx, value)                       \
+    for (idx = 0; (array) != NULL && (idx) < (array)->size; \
+         (value) = (array)->data[idx], idx++)
 
 /*
 #define da_insert(array, index, value)                                         \
