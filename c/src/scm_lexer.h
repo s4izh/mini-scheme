@@ -11,13 +11,12 @@ typedef struct _scm_lexer_t scm_lexer_t;
 typedef enum {
     SCM_TOKEN_LPAREN = 0,
     SCM_TOKEN_RPAREN,
-    // SCM_TOKEN_IF,
-    // SCM_TOKEN_COND,
-    // SCM_TOKEN_LET,
-    // SCM_TOKEN_DEFINE,
+
+    // ATOMS
     SCM_TOKEN_IDENTIFIER,
     SCM_TOKEN_LITERAL_NUMBER,
     SCM_TOKEN_LITERAL_STRING,
+
     SCM_TOKEN_QUOTE,
     SCM_TOKEN_QUASIQUOTE,
     SCM_TOKEN_COMMA,

@@ -26,7 +26,7 @@ static scm_result_t scm_evaluate_source(
     da_token_ptr tokens;
     da_init(&tokens);
 
-    printf("raw source code:\n%s\n", src);
+    SCM_DEBUG("raw source code:\n%s\n", src);
 
     SCM_DEBUG("lexing start");
 
@@ -41,10 +41,10 @@ static scm_result_t scm_evaluate_source(
 
     SCM_DEBUG("lexing end");
 
-    for (u32 i = 0; i < da_size(&tokens); ++i) {
-        scm_token_print(da_at(&tokens, i), true);
-    }
-    printf("\n");
+    // for (u32 i = 0; i < da_size(&tokens); ++i) {
+    //     scm_token_print(da_at(&tokens, i), true);
+    // }
+    // printf("\n");
 
     SCM_DEBUG("parsing start");
 
@@ -52,12 +52,10 @@ static scm_result_t scm_evaluate_source(
 
     SCM_DEBUG("parsing end");
 
-    printf("full tree:\n");
-    scm_ast_sexpr_print(root);
+    // printf("full tree:\n");
+    // scm_ast_sexpr_print(root);
 
     da_free(&tokens);
-
-    printf("\n");
 
     return scm_runtime_eval(runtime, root);
     // if (SCM_RESULT_IS_ERR(res)) {
@@ -108,6 +106,8 @@ static void repl()
                 scm_result_print(&res);
             } else {
                 scm_result_print(&res);
+                if (res.data.ok.type == SCM_OK_TYPE)
+                    printf("\n");
             }
         }
         // free(line);
@@ -153,7 +153,7 @@ static int evaluate_file(const char* filename)
 int main(int argc, char* argv[])
 {
     scm_log_init();
-    scm_log_set_level(LOG_DEBUG);
+    scm_log_set_level(LOG_WARNING);
     scm_log_timestamp_mode(true);
 
     if (argc == 1) {

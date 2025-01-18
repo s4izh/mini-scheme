@@ -8,7 +8,7 @@ void nfa_generated_register_transitions(nfa_engine_t* nfa)
     nfa_add_transition(nfa, SCM_LEXER_NFA_START, SCM_RPAREN, SCM_LEXER_NFA_RP_A);
     nfa_add_transition(nfa, SCM_LEXER_NFA_START, SCM_IDENTIFIERS_BASE, SCM_LEXER_NFA_IDENTIFIER_0);
     nfa_add_transition(nfa, SCM_LEXER_NFA_START, SCM_NUMBERS, SCM_LEXER_NFA_LITERAL_NUMBER_0);
-    nfa_add_transition(nfa, SCM_LEXER_NFA_START, SCM_NUMBERS, SCM_LEXER_NFA_LITERAL_STRING_0);
+    nfa_add_transition(nfa, SCM_LEXER_NFA_START, SCM_QUOTATION, SCM_LEXER_NFA_LITERAL_STRING_0);
     nfa_add_transition(nfa, SCM_LEXER_NFA_QUOTE_0, SCM_LETTERS_NUMBERS, SCM_LEXER_NFA_QUOTE_A);
     nfa_add_transition(nfa, SCM_LEXER_NFA_QUASIQUOTE_0, SCM_LETTERS_NUMBERS, SCM_LEXER_NFA_QUASIQUOTE_A);
     nfa_add_transition(nfa, SCM_LEXER_NFA_IDENTIFIER_0, SCM_IDENTIFIERS_ALL, SCM_LEXER_NFA_IDENTIFIER_0);

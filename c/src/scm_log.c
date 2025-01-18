@@ -9,7 +9,7 @@ const char* level_str[] = {"NONE", "ERROR", "WARNING",
                            "INFO", "DEBUG", "TRACE"};
 // static_assert(sizeof(level_str) / sizeof(level_str[0]) == LOG_NUM_LEVELS);
 
-int current_log_level = 0;
+scm_log_level_t current_log_level = 0;
 FILE* log_output;
 int timestamp_mode = 0;
 
@@ -26,6 +26,11 @@ void scm_log_set_level(scm_log_level_t level)
 void scm_log_timestamp_mode(int enable)
 {
     timestamp_mode = enable;
+}
+
+scm_log_level_t scm_log_get_level()
+{
+    return current_log_level;
 }
 
 void scm_log(
@@ -50,7 +55,7 @@ void scm_log(
         snprintf(timestamp + 19, sizeof(timestamp) - 19, ".%06ld", tv.tv_usec);
 
         fprintf(
-                log_output, "%s %s %-*s", timestamp, level_str[level], 18, context);
+                log_output, "%s %s %-*s", timestamp, level_str[level], 22, context);
     }
     else
     {

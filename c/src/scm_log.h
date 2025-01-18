@@ -34,6 +34,8 @@ void scm_log(
 //         context;                                                        \
 //     })
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 #define GET_CONTEXT()                                                   \
     ({                                                                  \
         const char* file = __FILE__;                                    \
@@ -45,6 +47,7 @@ void scm_log(
         snprintf(context, sizeof(context), "%s:%d", file, __LINE__);    \
         context;                                                        \
     })
+#pragma GCC diagnostic pop
 
 // snprintf(                                                           \
         //     context, sizeof(context), "%.*s:%d", (int)len, file, __LINE__); \
@@ -64,13 +67,29 @@ void scm_log(
 
 void scm_log_timestamp_mode(int enable);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 #define SCM_LOG(level, msg, ...) \
     scm_log(level, GET_CONTEXT(), msg, ##__VA_ARGS__)
+#pragma GCC diagnostic pop
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 #define SCM_DEBUG(msg, ...) \
     scm_log(LOG_DEBUG, GET_CONTEXT(), msg, ##__VA_ARGS__)
+#pragma GCC diagnostic pop
 
 #define SCM_ERROR(msg, ...) \
     scm_log(LOG_ERROR, GET_CONTEXT(), msg, ##__VA_ARGS__)
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#define SCM_LOG_IF(level, expr)               \
+    do {                                      \
+        if ((level) <= scm_log_get_level()) { \
+            (expr);                           \
+        }                                     \
+    } while (0)
+#pragma GCC diagnostic pop
 
 #endif // !__SCM_LOG_H__

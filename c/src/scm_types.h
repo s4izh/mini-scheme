@@ -12,7 +12,7 @@ typedef struct _scm_type_function_sexpr_t scm_type_function_sexpr_t;
 typedef struct _scm_type_list_t scm_type_list_t;
 typedef struct _scm_type_t scm_type_t;
 
-typedef scm_result_t (*scm_builtin_func_t) (void*, void** args, u32 num);
+typedef scm_result_t (*scm_builtin_func_t) (void*, da_scm_ast_sexpr_ptr*);
 
 struct _scm_type_int_t {
     i32 num;
@@ -21,6 +21,7 @@ struct _scm_type_int_t {
 struct _scm_type_str_t {
     char* str;
     int len;
+    bool ref;
 };
 
 struct _scm_type_list_t {
@@ -48,7 +49,7 @@ struct _scm_type_function_t {
     union {
         scm_type_function_builtin_t builtin;
         scm_type_function_sexpr_t function;
-    } func;
+    } data;
 };
 
 struct _scm_type_t {
@@ -66,6 +67,10 @@ struct _scm_type_t {
     } data;
 };
 
-scm_type_t* scm_types_list_fill(scm_type_t* type, scm_ast_sexpr_t* list);
+void scm_types_list_fill(scm_type_t* type, scm_ast_sexpr_t* list_sexpr);
+
+void scm_types_from_atom(scm_type_t* type, scm_ast_sexpr_t* atom_sexpr);
+
+void scm_types_print(scm_type_t* type);
 
 #endif // !__SCM_TYPES_H__

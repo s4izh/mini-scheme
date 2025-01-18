@@ -89,6 +89,36 @@ static MunitResult test_lexer_suma(const MunitParameter params[], void* fixture)
     return MUNIT_OK;
 }
 
+static MunitResult test_lexer_string_literal(const MunitParameter params[], void* fixture) {
+    scm_resources_t* resources = (scm_resources_t*)fixture;
+    scm_lexer_t lexer;
+
+    scm_lexer_init(&lexer, resources);
+    const char* src = "\"string\"";
+    scm_lexer_set_source(&lexer, "test", src, strlen(src));
+
+    da_token_ptr tokens;
+    da_init(&tokens);
+
+    scm_token_t* token;
+    while ((token = scm_lexer_next_token(&lexer))->type != SCM_TOKEN_EOF) {
+        da_append(&tokens, token);
+    }
+    da_append(&tokens, token);
+
+    da_token_ptr expected_tokens;
+    da_init(&expected_tokens);
+
+    append_token(&expected_tokens, resources, SCM_TOKEN_LITERAL_STRING, "\"string\"", 0);
+    append_token(&expected_tokens, resources, SCM_TOKEN_EOF, NULL, 0);
+    
+    compare_da_tokens(&tokens, &expected_tokens);
+
+    da_free(&tokens);
+    da_free(&expected_tokens);
+    return MUNIT_OK;
+}
+
 static MunitResult test_lexer_empty_input(const MunitParameter params[], void* fixture) {
     scm_resources_t* resources = (scm_resources_t*)fixture;
     scm_lexer_t lexer;
@@ -575,6 +605,7 @@ static MunitTest scm_lexer_suite_tests[] = {
     basic_test("/empty", test_lexer_empty_input),
     basic_test("/random1", test_lexer_random1),
     basic_test("/suma", test_lexer_suma),
+    basic_test("/string-literal", test_lexer_string_literal),
     basic_test("/factorial", test_lexer_factorial),
     { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
 };

@@ -54,6 +54,9 @@ $(TEST_BUILD_DIR)/%.o: $(TEST_SRC_DIR)/%.c
 $(BUILD_DIR)/munit.o: $(EXTERNAL)/munit/munit.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
+repl: $(TARGET)
+	./$(TARGET)
+
 test: $(TARGET_TEST)
 	./$(TARGET_TEST)
 

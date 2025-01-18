@@ -123,8 +123,8 @@
 //     for (idx = 0; idx < (array)->size && ((value) = (array)->data[idx], 1); \
 //          idx++)
 
-#define da_foreach(array, idx, value)                       \
-    for (idx = 0; (array) != NULL && (idx) < (array)->size; \
+#define da_foreach(array, idx, value)                           \
+    for (idx = 0; (array) != NULL && (idx) < (array)->size;     \
          (value) = (array)->data[idx], idx++)
 
 /*

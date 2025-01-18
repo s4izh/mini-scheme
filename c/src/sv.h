@@ -20,6 +20,7 @@ void sv_free(string_view_t* sv);
 string_view_t sv_substr(const string_view_t* sv, size_t start, size_t end);
 int sv_equal(const string_view_t* sv1, const string_view_t* sv2);
 void sv_print(const string_view_t* sv);
+int sv_toi(const string_view_t* sv);
 
 #endif // __STRING_VIEW_H__
 

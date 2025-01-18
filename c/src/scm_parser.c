@@ -1,6 +1,7 @@
 #include "scm_parser.h"
 #include "scm_lexer.h"
 #include "scm_resources.h"
+#include "scm_log.h"
 #include "ds.h"
 
 #define TOKEN_CURRENT(parser) (da_at(parser->tokens, parser->pos))
@@ -151,8 +152,10 @@ scm_ast_sexpr_t* scm_parser_run(scm_parser_t* parser, da_token_ptr* tokens)
 
     while (TOKEN_CURRENT_TYPE(parser) != SCM_TOKEN_EOF) {
         scm_ast_sexpr_t* sexpr = scm_parse_s_expression(parser);
-        if (sexpr == NULL)
-            printf("null sexpr\n");
+        if (sexpr == NULL) {
+            SCM_ERROR("null sexpr");
+            return NULL;
+        }
 
         da_append(&(root->data.root.sexprs), sexpr);
 
@@ -161,7 +164,7 @@ scm_ast_sexpr_t* scm_parser_run(scm_parser_t* parser, da_token_ptr* tokens)
     }
 
     if (TOKEN_CURRENT_TYPE(parser) != SCM_TOKEN_EOF) {
-        printf("rarete, la última posición tendría que ser un token EOF\n");
+        SCM_ERROR("la última posición tendría que ser un token EOF");
         scm_token_print(TOKEN_CURRENT(parser), false);
     }
 

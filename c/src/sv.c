@@ -2,6 +2,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>
 
 inline void sv_init(string_view_t* sv) {
     sv->data = NULL;
@@ -44,4 +45,33 @@ inline void sv_print(const string_view_t* sv) {
         return;
     }
     printf("%.*s", (int)sv->len, sv->data);
+}
+
+int sv_toi(const string_view_t* sv) {
+    if (!sv || !sv->data || sv->len == 0) {
+        return 0;
+    }
+
+    const char* str = sv->data;
+    size_t len = sv->len;
+
+    int result = 0;
+    int sign = 1;
+    size_t i = 0;
+
+    while (i < len && isspace(str[i])) {
+        i++;
+    }
+
+    if (i < len && (str[i] == '-' || str[i] == '+')) {
+        sign = (str[i] == '-') ? -1 : 1;
+        i++;
+    }
+
+    while (i < len && isdigit(str[i])) {
+        result = result * 10 + (str[i] - '0');
+        i++;
+    }
+
+    return sign * result;
 }

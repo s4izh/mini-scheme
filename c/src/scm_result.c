@@ -39,6 +39,13 @@ void scm_err_print(scm_err_t* err) {
 
 void scm_ok_print(scm_ok_t* ok)
 {
+    switch(ok->type) {
+        case SCM_OK_VOID:
+            return;
+        case SCM_OK_TYPE:
+            scm_types_print(ok->data);
+            return;
+    }
 }
 
 void scm_result_print(scm_result_t* res)
