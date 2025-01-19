@@ -310,16 +310,24 @@ void scm_runtime_push_environment(scm_runtime_t* runtime)
     da_append(
         &runtime->environments,
         ((scm_environment_t){.bindings = {NULL, 0, 0}}));
-
-    // this is bad
-    // da_init(&da_at(&runtime->environments, da_size(&runtime->environments) -
-    // 1).bindings);
 }
 
 void scm_runtime_binding_add(scm_runtime_t* runtime, scm_binding_t* binding)
 {
     u32 last = da_size(&runtime->environments) - 1;
-    da_binding_ptr* bindings = &da_at(&runtime->environments, last);
+    scm_environment_t* env = &da_at(&runtime->environments, last);
+    da_binding_ptr* bindings = &env->bindings;
+
+    for (u32 i = 0; i < da_size(bindings); ++i) {
+        scm_binding_t* binded_binding = da_at(bindings, i);
+        if (sv_equal(&binded_binding->token->sv, &binding->token->sv)) {
+            // TODO: destroy the binding
+            da_at(bindings, i) = binding;
+            SCM_DEBUG("overwritten binding", bindings);
+            return;
+        }
+    }
+
     da_append(bindings, binding);
     SCM_DEBUG("appended binding to %p", bindings);
 }
