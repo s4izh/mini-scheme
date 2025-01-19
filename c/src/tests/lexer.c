@@ -4,6 +4,15 @@
 #include "munit/munit.h"
 #include "utils.h"
 
+typedef struct _lexer_test_helper lexer_test_helper;
+
+struct _lexer_test_helper {
+    scm_resources_t resources;
+    scm_lexer_t lexer;
+    da_token_ptr tokens;
+    da_token_ptr expected_tokens;
+};
+
 static void append_token(da_token_ptr* tokens, scm_resources_t* resources,
                         scm_token_type_t type, const char* text, u32 line)
 {
@@ -47,6 +56,19 @@ static void test_tear_down(void* fixture) {
     free(resources);
 }
 
+// static void* test_setup(const MunitParameter params[], void* user_data) {
+//     lexer_test_helper* helper = malloc(sizeof(lexer_test_helper));
+//     scm_resources_init(&helper->resources);
+//     scm_lexer_init(&helper->lexer, &helper->resources);
+//     return helper;
+// }
+
+// static void test_tear_down(void* fixture) {
+//     lexer_test_helper* helper = (lexer_test_helper*)fixture;
+//     scm_resources_free(&helper->resources);
+//     free(helper);
+// }
+
 static MunitResult test_lexer_suma(const MunitParameter params[], void* fixture) {
     scm_resources_t* resources = (scm_resources_t*)fixture;
     scm_lexer_t lexer;
@@ -74,15 +96,7 @@ static MunitResult test_lexer_suma(const MunitParameter params[], void* fixture)
     append_token(&expected_tokens, resources, SCM_TOKEN_RPAREN, ")", 0);
     append_token(&expected_tokens, resources, SCM_TOKEN_EOF, NULL, 0);
     
-    munit_assert_size(da_size(&tokens), ==, da_size(&expected_tokens));
-
-    for (size_t i = 0; i < da_size(&tokens); ++i) {
-        scm_token_t* t1 = da_at(&tokens, i);
-        scm_token_t* t2 = da_at(&expected_tokens, i);
-        munit_assert_int(t1->type, ==, t2->type);
-        munit_assert_true(sv_equal(&t1->sv, &t2->sv));
-        munit_assert_int(t1->line, ==, t2->line);
-    }
+    compare_da_tokens(&tokens, &expected_tokens);
 
     da_free(&tokens);
     da_free(&expected_tokens);
@@ -110,6 +124,36 @@ static MunitResult test_lexer_string_literal(const MunitParameter params[], void
     da_init(&expected_tokens);
 
     append_token(&expected_tokens, resources, SCM_TOKEN_LITERAL_STRING, "\"string\"", 0);
+    append_token(&expected_tokens, resources, SCM_TOKEN_EOF, NULL, 0);
+    
+    compare_da_tokens(&tokens, &expected_tokens);
+
+    da_free(&tokens);
+    da_free(&expected_tokens);
+    return MUNIT_OK;
+}
+
+static MunitResult test_lexer_string_escapes(const MunitParameter params[], void* fixture) {
+    scm_resources_t* resources = (scm_resources_t*)fixture;
+    scm_lexer_t lexer;
+
+    scm_lexer_init(&lexer, resources);
+    const char* src = "\"st\\\"ri\\\"ng\"";
+    scm_lexer_set_source(&lexer, "test", src, strlen(src));
+
+    da_token_ptr tokens;
+    da_init(&tokens);
+
+    scm_token_t* token;
+    while ((token = scm_lexer_next_token(&lexer))->type != SCM_TOKEN_EOF) {
+        da_append(&tokens, token);
+    }
+    da_append(&tokens, token);
+
+    da_token_ptr expected_tokens;
+    da_init(&expected_tokens);
+
+    append_token(&expected_tokens, resources, SCM_TOKEN_LITERAL_STRING, "\"st\\\"ri\\\"ng\"", 0);
     append_token(&expected_tokens, resources, SCM_TOKEN_EOF, NULL, 0);
     
     compare_da_tokens(&tokens, &expected_tokens);
@@ -606,6 +650,7 @@ static MunitTest scm_lexer_suite_tests[] = {
     basic_test("/random1", test_lexer_random1),
     basic_test("/suma", test_lexer_suma),
     basic_test("/string-literal", test_lexer_string_literal),
+    basic_test("/string-escapes", test_lexer_string_escapes),
     basic_test("/factorial", test_lexer_factorial),
     { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
 };
