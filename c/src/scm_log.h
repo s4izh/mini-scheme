@@ -11,8 +11,9 @@ typedef enum {
     LOG_NUM_LEVELS,
 } scm_log_level_t;
 
-void scm_log_init();
+void scm_log_init(void);
 void scm_log_set_level(scm_log_level_t level);
+scm_log_level_t scm_log_get_level(void);
 void scm_log(
     scm_log_level_t level, const char* context, const char* format, ...);
 
@@ -49,22 +50,6 @@ void scm_log(
     })
 #pragma GCC diagnostic pop
 
-// snprintf(                                                           \
-        //     context, sizeof(context), "%.*s:%d", (int)len, file, __LINE__); \
-
-// #define GET_CONTEXT()                                                   \
-    // ({                                                                  \
-    //     const char *file = __FILE__;                                    \
-    //     const char *last_slash = strrchr(file, '/');                    \
-    //     const char *basename = last_slash ? last_slash + 1 : file;      \
-    //     const char *dot = strrchr(basename, '.');                       \
-    //     static char context[256];                                       \
-    //     size_t len = dot ? (size_t)(dot - basename) : strlen(basename); \
-    //     snprintf(context, sizeof(context), "%.*s:%d",                   \
-    //              (int)len, basename, __LINE__);                         \
-    //     context;                                                        \
-    // })
-
 void scm_log_timestamp_mode(int enable);
 
 #pragma GCC diagnostic push
@@ -88,6 +73,7 @@ void scm_log_timestamp_mode(int enable);
     do {                                      \
         if ((level) <= scm_log_get_level()) { \
             (expr);                           \
+            printf("\n");                     \
         }                                     \
     } while (0)
 #pragma GCC diagnostic pop

@@ -67,7 +67,7 @@ def main():
             call = transition.to_c_func_call()
             if call:
                 file.write("    " + transition.to_c_func_call() + "\n")
-        file.write(r"}")
+        file.write("}\n")
 
 if __name__ == "__main__":
     main()

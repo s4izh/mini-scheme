@@ -1,4 +1,5 @@
 #include "scm_result.h"
+#include "scm_types.h"
 
 #include <stdio.h>
 

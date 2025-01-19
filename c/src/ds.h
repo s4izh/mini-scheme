@@ -50,20 +50,6 @@
         }                                                              \
     } while (0)
 
-// #define da_create_from_c_array(array, const_data, data_size, element_size)   \
-//     do {                                                                     \
-//         (array)->data = malloc((data_size) * element_size);                  \
-//         if ((array)->data != NULL) {                                         \
-//             (array)->size = (data_size);                                     \
-//             (array)->capacity = (data_size);                                 \
-//             memcpy((array)->data, (const_data), (data_size) * element_size); \
-//             printf("from c size %zu\n", (array)->size); \
-//         } else {                                                             \
-//             (array)->size = 0;                                               \
-//             (array)->capacity = 0;                                           \
-//         }                                                                    \
-//     } while (0)
-
 #define da_create_from_c_array(array, const_data, data_size)              \
     do {                                                                  \
         (array)->data = malloc((data_size) * sizeof(*(array)->data));     \
@@ -112,16 +98,10 @@
 
 #define da_remove_last(array) \
     ((array)->size > 0 ? --(array)->size : (array)->size)
-// #define da_at(array, index) ((array)->data != NULL && (index) < (array)->size
-// ? (array)->data[index] : NULL)
 
 #define da_at(array, index) ((array)->data[index])
 
 #define da_size(array) ((array)->size)
-
-// #define da_foreach(array, idx, value)                                       \
-//     for (idx = 0; idx < (array)->size && ((value) = (array)->data[idx], 1); \
-//          idx++)
 
 #define da_foreach(array, idx, value)                           \
     for (idx = 0; (array) != NULL && (idx) < (array)->size;     \

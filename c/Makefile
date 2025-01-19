@@ -11,8 +11,8 @@ EXTERNAL = external
 
 .DEFAULT_GOAL := $(TARGET)
 
-# CFLAGS = -Wall -Wextra -pedantic -std=c99 -g3 -MMD -MP -lreadline
-CFLAGS = -pedantic -std=c99 -g3 -MMD -MP -lreadline
+CFLAGS = -Wall -Wextra -pedantic -Werror=switch -std=c99 -g3 -MMD -MP -lreadline
+# CFLAGS = -std=c99 -g3 -MMD -MP -lreadline
 INCLUDES = -I./src -I./external -I./src/tests
 CC = gcc
 

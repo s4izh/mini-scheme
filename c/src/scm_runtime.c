@@ -15,7 +15,7 @@ static scm_binding_t* scm_runtime_create_binding(scm_runtime_t* runtime)
     return malloc(sizeof(scm_binding_t));
 }
 
-static void scm_runtime_destroy_binding(scm_binding_t* binding)
+static void scm_runtime_destroy_binding(scm_runtime_t* runtime, scm_binding_t* binding)
 {
     free(binding);
 }
@@ -24,44 +24,49 @@ static scm_result_t scm_builtin_define(
     scm_runtime_t* runtime, da_scm_ast_sexpr_ptr* sexprs)
 {
     char* err;
+    scm_result_t res;
+    scm_binding_t* binding = NULL;
+
     u32 num_args = da_size(sexprs) - 1;
     scm_ast_sexpr_t* first = da_at(sexprs, 1);
 
     if (first->type == SCM_AST_ATOM) {
         SCM_DEBUG("defining a constant");
         // defining a constant
-        scm_binding_t* binding = scm_runtime_create_binding(runtime);
+        binding = scm_runtime_create_binding(runtime);
 
         // just one sexpr can be evaluated as the constant
         if (num_args > 2) {
-            char* err = "define constant takes the result of evaluating just one expr";
-            return SCM_RESULT_ERR_FROM_TOKEN(
+            err = "define constant takes the result of evaluating just one expr";
+            res = SCM_RESULT_ERR_FROM_TOKEN(
                 SCM_ERR_SEMANTIC, err, scm_ast_sexpr_token(first), NULL);
+            goto error;
         }
 
         scm_ast_sexpr_t* second = da_at(sexprs, 2);
-        if (second->type == SCM_AST_ATOM) {
+
+        if (second->type == SCM_AST_ATOM 
+            && second->data.atom.token->type != SCM_TOKEN_IDENTIFIER) {
             SCM_DEBUG("constant from an atom");
-            // first aquí es el identificador
-            if (second->data.atom.token->type == SCM_TOKEN_IDENTIFIER) {
-
-            } else {
-                binding->token = first->data.atom.token;
-                scm_types_from_atom(&binding->type, second);
-                scm_runtime_binding_add(runtime, binding);
+            scm_type_t* type = scm_resources_alloc_type(runtime->resources);
+            scm_types_from_atom(type, second);
+            binding->token = first->data.atom.token;
+            binding->type = type;
+        } else {
+            res = scm_runtime_eval(runtime, second);
+            if (SCM_RESULT_IS_ERR(res)) {
+                goto error;
             }
-        } else if (second->type == SCM_AST_LIST) {
-            SCM_DEBUG("constant from a list");
-            return SCM_RESULT_ERR(
-                SCM_ERR_TODO, "constant from a list unimplemented", NULL, 0, 0, NULL)
-        } else if (second->type == SCM_AST_QUOTE) {
-            SCM_DEBUG("constant from a quote");
-            return SCM_RESULT_ERR(
-                SCM_ERR_TODO, "constant from a quote unimplemented", NULL, 0, 0, NULL)
+            if (res.data.ok.type == SCM_OK_VOID) {
+                err = "should evaluate to a type";
+                res = SCM_RESULT_ERR_FROM_TOKEN(
+                    SCM_ERR_SEMANTIC, err, scm_ast_sexpr_token(first), NULL);
+                goto error;
+            }
+            binding->token = first->data.atom.token;
+            binding->type = res.data.ok.data;
         }
-
-        return SCM_RESULT_OK(SCM_OK_VOID, NULL);
-
+        scm_runtime_binding_add(runtime, binding);
     } else if (first->type == SCM_AST_LIST) {
         // defining a function
         if (da_size(&first->data.list.sexprs) == 1) {
@@ -69,18 +74,25 @@ static scm_result_t scm_builtin_define(
         } else {
             // takes args
         }
-        return SCM_RESULT_ERR(
+        res = SCM_RESULT_ERR(
             SCM_ERR_TODO, "function definition unimplemented", NULL, 0, 0, NULL)
-
+        goto error;
     } else {
         asprintf(
             &err,
             "not expecting a %s after define, expecting an identifier or a list",
             scm_ast_sexpr_type_to_str(first));
 
-        return SCM_RESULT_ERR_FROM_TOKEN(
+        res = SCM_RESULT_ERR_FROM_TOKEN(
             SCM_ERR_SEMANTIC, err, scm_ast_sexpr_token(first), free);
+        goto error;
     }
+    return SCM_RESULT_OK(SCM_OK_VOID, NULL);
+
+error:
+    if (binding != NULL)
+        scm_runtime_destroy_binding(runtime, binding);
+    return res;
 }
 
 static void scm_builtin_if(void* _runtime, void** args, u32 num)
@@ -105,13 +117,13 @@ static scm_result_t scm_builtin_op_sum(
     u32 num_args = da_size(sexprs) - 1;
     scm_ast_sexpr_t* first = da_at(sexprs, 1);
 
-    i32 sum = 0;
+    f64 sum = 0.0;
 
     if (first->type == SCM_AST_ATOM) {
     } else if (first->type == SCM_AST_LIST) {
     }
 
-    // start at 1 skip the call
+    // start at 1 to skip the call
     for (u32 i = 1; i < da_size(sexprs); ++i) {
         scm_ast_sexpr_t* sexpr = da_at(sexprs, i);
         scm_result_t res = scm_runtime_eval(runtime, sexpr);
@@ -120,21 +132,21 @@ static scm_result_t scm_builtin_op_sum(
 
         if (res.data.ok.type != SCM_OK_TYPE) {
             return SCM_RESULT_ERR_FROM_TOKEN(SCM_ERR_SEMANTIC,
-                    "should evaluate to int type",
+                    "should evaluate to num type",
                     scm_ast_sexpr_token(sexpr), NULL);
         }
 
         scm_type_t* type = res.data.ok.data;
-        if (type->type != SCM_TYPE_INT) {
+        if (type->type != SCM_TYPE_NUM) {
             return SCM_RESULT_ERR_FROM_TOKEN(SCM_ERR_SEMANTIC,
-                    "should evaluate to int type",
+                    "should evaluate to num type",
                     scm_ast_sexpr_token(sexpr), NULL);
         }
-        sum += type->data.i32.num;
+        sum += type->data.num.num;
     }
     scm_type_t* type = scm_resources_alloc_type(runtime->resources);
-    type->type = SCM_TYPE_INT;
-    type->data.i32.num = sum;
+    type->type = SCM_TYPE_NUM;
+    type->data.num.num = sum;
 
     return SCM_RESULT_OK(SCM_OK_TYPE, type);
 }
@@ -150,7 +162,7 @@ static scm_result_t scm_builtin_op_sub(
     } else if (first->type == SCM_AST_LIST) {
     }
 
-    i32 sub = 0;
+    f64 sub = 0.0;
 
     // start at 1 skip the call and the first number
     for (u32 i = 1; i < da_size(sexprs); ++i) {
@@ -166,17 +178,17 @@ static scm_result_t scm_builtin_op_sub(
         }
 
         scm_type_t* type = res.data.ok.data;
-        if (type->type != SCM_TYPE_INT) {
+        if (type->type != SCM_TYPE_NUM) {
             return SCM_RESULT_ERR_FROM_TOKEN(SCM_ERR_SEMANTIC,
                     "should evaluate to int type",
                     scm_ast_sexpr_token(sexpr), NULL);
         }
-        if (i == 1) sub = type->data.i32.num;
-        else sub -= type->data.i32.num;
+        if (i == 1) sub = type->data.num.num;
+        else sub -= type->data.num.num;
     }
     scm_type_t* type = scm_resources_alloc_type(runtime->resources);
-    type->type = SCM_TYPE_INT;
-    type->data.i32.num = sub;
+    type->type = SCM_TYPE_NUM;
+    type->data.num.num = sub;
 
     return SCM_RESULT_OK(SCM_OK_TYPE, type);
 }
@@ -192,7 +204,7 @@ static scm_result_t scm_builtin_op_mul(
     } else if (first->type == SCM_AST_LIST) {
     }
 
-    i32 mul = 1;
+    f64 mul = 1.0;
 
     // start at 1 skip the call and the first number
     for (u32 i = 1; i < da_size(sexprs); ++i) {
@@ -208,16 +220,16 @@ static scm_result_t scm_builtin_op_mul(
         }
 
         scm_type_t* type = res.data.ok.data;
-        if (type->type != SCM_TYPE_INT) {
+        if (type->type != SCM_TYPE_NUM) {
             return SCM_RESULT_ERR_FROM_TOKEN(SCM_ERR_SEMANTIC,
                     "should evaluate to int type",
                     scm_ast_sexpr_token(sexpr), NULL);
         }
-        mul *= type->data.i32.num;
+        mul *= type->data.num.num;
     }
     scm_type_t* type = scm_resources_alloc_type(runtime->resources);
-    type->type = SCM_TYPE_INT;
-    type->data.i32.num = mul;
+    type->type = SCM_TYPE_NUM;
+    type->data.num.num = mul;
 
     return SCM_RESULT_OK(SCM_OK_TYPE, type);
 }
@@ -239,10 +251,13 @@ static void scm_runtime_add_builtin_binding(
         .line = -1,
     };
 
-    binding->type.type = SCM_TYPE_FUNCTION;
+    scm_type_t* type = scm_resources_alloc_type(runtime->resources);
+
+    binding->type = type;
+    binding->type->type = SCM_TYPE_FUNCTION;
     binding->token = fake_token;
 
-    binding->type.data.function = (scm_type_function_t){
+    binding->type->data.function = (scm_type_function_t){
         .type = SCM_TYPE_FUNCTION_BUILTIN,
         .min_args = min_args,
         .max_args = max_args,
@@ -355,22 +370,26 @@ static scm_result_t scm_runtime_eval_ast_atom(
                     scm_ast_sexpr_token(atom_sexpr), free);
             }
 
-            return SCM_RESULT_OK(SCM_OK_TYPE, &binding->type);
+            return SCM_RESULT_OK(SCM_OK_TYPE, binding->type);
         }
         case SCM_TOKEN_LITERAL_NUMBER: {
             scm_type_t* type = scm_resources_alloc_type(runtime->resources);
-            type->type = SCM_TYPE_INT;
-            type->data.i32.num = sv_toi(&atom->token->sv);
+            type->type = SCM_TYPE_NUM;
+            type->data.num.num = sv_toi(&atom->token->sv);
             return SCM_RESULT_OK(SCM_OK_TYPE, type);
         }
         case SCM_TOKEN_LITERAL_STRING: {
             scm_type_t* type = scm_resources_alloc_type(runtime->resources);
             type->type = SCM_TYPE_STR;
-            type->data.str.str = atom->token->sv.data;
+            type->data.str.str = (char*)atom->token->sv.data;
             type->data.str.len = atom->token->sv.len;
             type->data.str.ref = true;
             return SCM_RESULT_OK(SCM_OK_TYPE, type);
         }
+        default:
+            return SCM_RESULT_ERR_FROM_TOKEN(
+                SCM_ERR_SEMANTIC, "evaluating a non atom expresion as atom",
+                scm_ast_sexpr_token(atom_sexpr), NULL);
     }
 
     return SCM_RESULT_OK(SCM_OK_VOID, NULL);
@@ -445,7 +464,7 @@ static scm_result_t scm_runtime_eval_ast_list(
             scm_ast_sexpr_token(list), free);
     }
 
-    if (binding->type.type != SCM_TYPE_FUNCTION) {
+    if (binding->type->type != SCM_TYPE_FUNCTION) {
         asprintf(&err, "can't evaluate a non function type '%.*s'", (int)idenfifier->len, idenfifier->data);
         return SCM_RESULT_ERR_FROM_TOKEN(
             SCM_ERR_SEMANTIC, err,
@@ -454,7 +473,7 @@ static scm_result_t scm_runtime_eval_ast_list(
 
     SCM_DEBUG("found %.*s", (int)idenfifier->len, idenfifier->data);
 
-    scm_type_function_t* function = &binding->type.data.function;
+    scm_type_function_t* function = &binding->type->data.function;
     u32 args = da_size(sexprs) - 1;
 
     if (args < function->min_args)
@@ -493,7 +512,6 @@ static scm_result_t scm_runtime_eval_ast_root(
 {
     assert(root != NULL);
 
-    // scm_runtime_result_t res = result();
     scm_result_t res;
 
     for (u32 i = 0; i < da_size(&root->data.root.sexprs); ++i) {

@@ -4,7 +4,7 @@
 #include "types.h"
 #include "scm_parser.h"
 
-typedef struct _scm_type_int_t scm_type_int_t;
+typedef struct _scm_type_num_t scm_type_num_t;
 typedef struct _scm_type_str_t scm_type_str_t;
 typedef struct _scm_type_function_t scm_type_function_t;
 typedef struct _scm_type_function_builtin_t scm_type_function_builtin_t;
@@ -14,8 +14,8 @@ typedef struct _scm_type_t scm_type_t;
 
 typedef scm_result_t (*scm_builtin_func_t) (void*, da_scm_ast_sexpr_ptr*);
 
-struct _scm_type_int_t {
-    i32 num;
+struct _scm_type_num_t {
+    f64 num;
 };
 
 struct _scm_type_str_t {
@@ -54,13 +54,13 @@ struct _scm_type_function_t {
 
 struct _scm_type_t {
     enum {
-        SCM_TYPE_INT,
+        SCM_TYPE_NUM,
         SCM_TYPE_STR,
         SCM_TYPE_LIST,
         SCM_TYPE_FUNCTION,
     } type;
     union {
-        scm_type_int_t i32;
+        scm_type_num_t num;
         scm_type_str_t str;
         scm_type_list_t list;
         scm_type_function_t function;

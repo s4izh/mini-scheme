@@ -153,7 +153,7 @@ static int evaluate_file(const char* filename)
 int main(int argc, char* argv[])
 {
     scm_log_init();
-    scm_log_set_level(LOG_WARNING);
+    scm_log_set_level(LOG_DEBUG);
     scm_log_timestamp_mode(true);
 
     if (argc == 1) {

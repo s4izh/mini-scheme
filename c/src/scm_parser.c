@@ -194,7 +194,7 @@ static void scm_print_indent(int indent_level)
     }
 }
 
-static void scm_ast_sexpr_print_rec(scm_ast_sexpr_t* sexpr, int indent_level)
+void scm_ast_sexpr_print_rec(scm_ast_sexpr_t* sexpr, int indent_level)
 {
     // printf("indent level %d: ", indent_level);
     if (!sexpr)
@@ -252,7 +252,7 @@ static void scm_ast_sexpr_print_rec(scm_ast_sexpr_t* sexpr, int indent_level)
 void scm_ast_sexpr_print(scm_ast_sexpr_t* sexpr)
 {
     scm_ast_sexpr_print_rec(sexpr, 0);
-    printf("\n");
+    // printf("\n");
 }
 
 scm_token_t* scm_ast_sexpr_token(scm_ast_sexpr_t* sexpr)

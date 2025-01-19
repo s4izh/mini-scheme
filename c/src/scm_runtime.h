@@ -14,7 +14,7 @@ DA_DEFINE(scm_binding_t*, da_binding_ptr);
 
 struct _scm_binding_t {
     scm_token_t* token;
-    scm_type_t type;
+    scm_type_t* type;
 };
 
 struct _scm_environment_t {

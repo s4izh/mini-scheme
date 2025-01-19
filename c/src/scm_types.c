@@ -1,6 +1,8 @@
 #include "scm_types.h"
+#include "scm_log.h"
 
 #include <assert.h>
+#include <math.h>
 
 void scm_types_list_fill(scm_type_t* type, scm_ast_sexpr_t* list_sexpr)
 {
@@ -26,8 +28,8 @@ void scm_types_from_atom(scm_type_t* type, scm_ast_sexpr_t* atom_sexpr)
         case SCM_TOKEN_IDENTIFIER:
             return;
         case SCM_TOKEN_LITERAL_NUMBER: {
-            type->type = SCM_TYPE_INT;
-            type->data.i32.num = sv_toi(&atom->token->sv);
+            type->type = SCM_TYPE_NUM;
+            type->data.num.num = sv_toi(&atom->token->sv);
             return;
         }
         case SCM_TOKEN_LITERAL_STRING: {
@@ -37,20 +39,29 @@ void scm_types_from_atom(scm_type_t* type, scm_ast_sexpr_t* atom_sexpr)
             type->data.str.ref = true;
             return;
         }
+        default:
+            SCM_ERROR("this isn't an atom token type");
+            return;
+    }
+}
+
+static void print_num(f64 num) {
+    if (fabs(num - (int)num) < 1e-6) {
+        printf("%.0f", num);
+    } else {
+        printf("%f", num);
     }
 }
 
 void scm_types_print(scm_type_t* type)
 {
     switch (type->type) {
-        case SCM_TYPE_INT: {
-            printf("%d", type->data.i32.num);
+        case SCM_TYPE_NUM: {
+            print_num(type->data.num.num);
             return;
         };
         case SCM_TYPE_STR: {
-            string_view_t sv = {0};
-            sv.data = type->data.str.str;
-            sv.len = type->data.str.len;
+            string_view_t sv = {type->data.str.str, type->data.str.len};
             sv_print(&sv);
             return;
         };

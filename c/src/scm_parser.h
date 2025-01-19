@@ -63,6 +63,7 @@ void scm_parser_init(scm_parser_t* parser, scm_resources_t* resources);
 
 scm_ast_sexpr_t* scm_parser_run(scm_parser_t* parser, da_token_ptr* tokens);
 
+void scm_ast_sexpr_print_rec(scm_ast_sexpr_t* sexpr, int indent_level);
 void scm_ast_sexpr_print(scm_ast_sexpr_t* sexpr);
 
 const char* scm_ast_sexpr_type_to_str(scm_ast_sexpr_t* sexpr);

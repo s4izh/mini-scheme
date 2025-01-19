@@ -59,8 +59,8 @@ void scm_log(
     }
     else
     {
-        // fprintf(log_output, "%s:0 %-*s", context, 8, level_str[level]);
-        fprintf(log_output, "%s:0 %s ", context, level_str[level]);
+        fprintf(log_output, "%s:0 %-*s", context, 8, level_str[level]);
+        // fprintf(log_output, "%s:0 %s ", context, level_str[level]);
     }
 
     vfprintf(log_output, format, args);
