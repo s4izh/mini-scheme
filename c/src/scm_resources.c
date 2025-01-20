@@ -1,3 +1,4 @@
+#include "rc.h"
 #include "scm_lexer.h"
 #include "scm_parser.h"
 #include "scm_resources.h"
@@ -86,12 +87,22 @@ error:
 
 void* scm_resources_alloc_binding(scm_resources_t* resources)
 {
-    return malloc(sizeof(scm_binding_t));
+    scm_binding_t* binding = malloc(sizeof(scm_binding_t));
+    if (binding == NULL)
+        return NULL;
+
+    RC_INIT(binding, free);
+    return binding;
 }
 
 void* scm_resources_alloc_type(scm_resources_t* resources)
 {
-    return malloc(sizeof(scm_type_t));
+    scm_type_t* type = malloc(sizeof(scm_type_t));
+    if (type == NULL)
+        return NULL;
+
+    RC_INIT(type, free);
+    return type;
 }
 
 scm_result_t scm_resources_init(scm_resources_t* resources)

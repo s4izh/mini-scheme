@@ -1,16 +1,16 @@
+#ifndef TEST_MODE
 #include "scm_lexer.h"
 #include "scm_parser.h"
 #include "scm_result.h"
 #include "scm_runtime.h"
 #include "scm_log.h"
 #include "ds.h"
+#include "sv.h"
 #include "utils.h"
 
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <string.h>
-
-#ifndef TEST_MODE
 
 static void usage(char* name)
 {

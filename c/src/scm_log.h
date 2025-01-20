@@ -37,18 +37,21 @@ void scm_log(
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
+
 #define GET_CONTEXT()                                                   \
     ({                                                                  \
         const char* file = __FILE__;                                    \
         const char* last_slash = strrchr(file, '/');                    \
-        const char* basename = last_slash ? last_slash + 1 : file;      \
-        const char* dot = strrchr(basename, '.');                       \
         static char context[256];                                       \
-        size_t len = dot ? (size_t)(dot - basename) : strlen(basename); \
         snprintf(context, sizeof(context), "%s:%d", file, __LINE__);    \
         context;                                                        \
     })
+
 #pragma GCC diagnostic pop
+
+// const char* basename = last_slash ? last_slash + 1 : file;
+// const char* dot = strrchr(basename, '.');                    
+// size_t len = dot ? (size_t)(dot - basename) : strlen(basename);
 
 void scm_log_timestamp_mode(int enable);
 

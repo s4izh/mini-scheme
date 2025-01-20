@@ -4,6 +4,7 @@
 #include "ds.h"
 #include "scm_parser.h"
 #include "scm_types.h"
+#include "list.h"
 
 typedef struct _scm_binding_t scm_binding_t;
 typedef struct _scm_environment_t scm_environment_t;
@@ -15,6 +16,8 @@ DA_DEFINE(scm_binding_t*, da_binding_ptr);
 struct _scm_binding_t {
     scm_token_t* token;
     scm_type_t* type;
+
+    RC_DECLARE;
 };
 
 struct _scm_environment_t {
@@ -34,11 +37,13 @@ struct _scm_runtime_t {
 
 void scm_runtime_init(scm_runtime_t* runtime, scm_resources_t* resources, scm_runtime_mode_t mode);
 
-scm_binding_t* scm_runtime_binding_lookup(scm_runtime_t* runtime, const char* name, u32 size);
+scm_binding_t* scm_runtime_binding_lookup(scm_runtime_t* runtime, string_view_t identifier);
 
 void scm_runtime_binding_add(scm_runtime_t* runtime, scm_binding_t* binding);
 
-void scm_runtime_push_environment(scm_runtime_t* runtime);
+void scm_environment_binding_add(scm_environment_t* env, scm_binding_t* binding);
+
+void scm_runtime_push_environment(scm_runtime_t* runtime, scm_environment_t environment);
 
 void scm_runtime_pop_environment(scm_runtime_t* runtime);
 

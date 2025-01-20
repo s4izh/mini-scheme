@@ -12,6 +12,7 @@ typedef struct {
 #define sv_len(sv) ((sv)->len)
 #define sv_data(sv) ((sv)->data)
 #define sv_at(sv, index) ((sv)->data[index])
+#define sv_format(sv) (int)(sv)->len, (sv)->data
 
 void sv_init(string_view_t* sv);
 void sv_init_with_str(string_view_t* sv, const char* str);

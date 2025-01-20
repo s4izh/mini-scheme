@@ -18,6 +18,9 @@ void scm_err_print(scm_err_t* err) {
         case SCM_ERR_SYNTAX:
             printf("Syntax error");
             break;
+        case SCM_ERR_GRAMMAR:
+            printf("Grammar error");
+            break;
         case SCM_ERR_SEMANTIC:
             printf("Semantic error");
             break;

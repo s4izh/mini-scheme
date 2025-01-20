@@ -4,6 +4,7 @@
 #include "scm_resources.h"
 #include "types.h"
 #include "nfa.h"
+#include "rc.h"
 
 typedef struct _scm_token_t scm_token_t;
 typedef struct _scm_lexer_t scm_lexer_t;
@@ -29,6 +30,7 @@ struct _scm_token_t {
     scm_token_type_t type;
     string_view_t sv;
     u32 line;
+    RC_DECLARE;
 };
 
 void scm_token_print(scm_token_t* token, bool only_token_type);
