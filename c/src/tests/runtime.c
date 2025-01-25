@@ -426,6 +426,8 @@ static MunitResult test_runtime_if_basic(const MunitParameter params[], void* fi
         {"(if '() 23 1)", 1},
         {"(if (= 4 4) 18)", 18},
         {"(if (= 4 18) 18 (+ 2 4 5))", 11},
+        {"(if #t 18 (+ 2 4 5))", 18},
+        {"(if #f 18 (+ 2 4 5))", 11},
         {NULL, 0}
     };
 
