@@ -88,8 +88,12 @@ struct _scm_result_t {
 #define SCM_RESULT_IS_OK(result) ((result).type == SCM_RESULT_OK)
 #define SCM_RESULT_IS_ERR(result) ((result).type == SCM_RESULT_ERR)
 
-#define SCM_RESULT_OK_DATA(result) ((result).data.ok)
-#define SCM_RESULT_ERR_DATA(result) ((result).data.err)
+// #define SCM_RESULT_OK_KIND(result) ((result).type)
+// #define SCM_RESULT_OK_DATA(result) ((result).data.ok)
+// #define SCM_RESULT_ERR_DATA(result) ((result).data.err)
+
+#define SCM_RESULT_OK_KIND(result) ((result).data.ok.type)
+#define SCM_RESULT_OK_DATA(result) ((result).data.ok.data)
 
 void scm_err_print(scm_err_t* err);
 void scm_ok_print(scm_ok_t* ok);

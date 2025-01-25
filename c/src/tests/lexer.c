@@ -44,13 +44,15 @@ static void compare_da_tokens(da_token_ptr* tokens, da_token_ptr* expected_token
     }
 }
 
-static void* test_setup(const MunitParameter params[], void* user_data) {
+static void* test_setup(const MunitParameter params[], void* user_data)
+{
     scm_resources_t* resources = malloc(sizeof(scm_resources_t));
     scm_resources_init(resources);
     return resources;
 }
 
-static void test_tear_down(void* fixture) {
+static void test_tear_down(void* fixture)
+{
     scm_resources_t* resources = (scm_resources_t*)fixture;
     scm_resources_free(resources);
     free(resources);
@@ -69,7 +71,8 @@ static void test_tear_down(void* fixture) {
 //     free(helper);
 // }
 
-static MunitResult test_lexer_suma(const MunitParameter params[], void* fixture) {
+static MunitResult test_lexer_suma(const MunitParameter params[], void* fixture)
+{
     scm_resources_t* resources = (scm_resources_t*)fixture;
     scm_lexer_t lexer;
 
@@ -103,7 +106,8 @@ static MunitResult test_lexer_suma(const MunitParameter params[], void* fixture)
     return MUNIT_OK;
 }
 
-static MunitResult test_lexer_string_literal(const MunitParameter params[], void* fixture) {
+static MunitResult test_lexer_string_literal(const MunitParameter params[], void* fixture)
+{
     scm_resources_t* resources = (scm_resources_t*)fixture;
     scm_lexer_t lexer;
 
@@ -133,7 +137,8 @@ static MunitResult test_lexer_string_literal(const MunitParameter params[], void
     return MUNIT_OK;
 }
 
-static MunitResult test_lexer_string_escapes(const MunitParameter params[], void* fixture) {
+static MunitResult test_lexer_string_escapes(const MunitParameter params[], void* fixture)
+{
     scm_resources_t* resources = (scm_resources_t*)fixture;
     scm_lexer_t lexer;
 
@@ -163,7 +168,8 @@ static MunitResult test_lexer_string_escapes(const MunitParameter params[], void
     return MUNIT_OK;
 }
 
-static MunitResult test_lexer_empty_input(const MunitParameter params[], void* fixture) {
+static MunitResult test_lexer_empty_input(const MunitParameter params[], void* fixture)
+{
     scm_resources_t* resources = (scm_resources_t*)fixture;
     scm_lexer_t lexer;
 
@@ -504,7 +510,8 @@ static MunitResult test_lexer_special_chars(const MunitParameter params[], void*
 }
 */
 
-static MunitResult test_lexer_factorial(const MunitParameter params[], void* fixture) {
+static MunitResult test_lexer_factorial(const MunitParameter params[], void* fixture)
+{
     scm_resources_t* resources = (scm_resources_t*)fixture;
     scm_lexer_t lexer;
 
@@ -567,8 +574,9 @@ static MunitResult test_lexer_factorial(const MunitParameter params[], void* fix
     return MUNIT_OK;
 }
 
-static MunitResult test_lexer_random1(const MunitParameter params[], void* fixture) {
-     scm_resources_t* resources = (scm_resources_t*)fixture;
+static MunitResult test_lexer_random1(const MunitParameter params[], void* fixture)
+{
+    scm_resources_t* resources = (scm_resources_t*)fixture;
     scm_lexer_t lexer;
 
     scm_lexer_init(&lexer, resources);
@@ -602,7 +610,6 @@ static MunitResult test_lexer_random1(const MunitParameter params[], void* fixtu
     return MUNIT_OK;
 }
 /*
-
 static MunitResult test_lexer_string_edge(const MunitParameter params[], void* fixture) {
     scm_resources_t* resources = (scm_resources_t*)fixture;
     scm_lexer_t lexer;

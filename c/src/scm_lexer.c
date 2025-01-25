@@ -64,6 +64,14 @@ static u32 scm_lexer_epsilon_cb(nfa_engine_t* nfa, void* user_data)
             }
             break;
         };
+        case SCM_LEXER_NFA_LITERAL_BOOLEAN_1: {
+            char c = scm_lexer_peek(lexer);
+            if (is_paren(c) || c == '\"' || is_whitespace(c) ||
+                c == 0 /* EOF */) {
+                return SCM_LEXER_NFA_LITERAL_BOOLEAN_A;
+            }
+            break;
+        };
     }
     return nfa->state_current;
 }
@@ -73,21 +81,22 @@ static const char* token_type_to_str(scm_token_type_t token)
     // clang-format off
     switch (token)
     {
-        case SCM_TOKEN_LPAREN:        return "LPAREN";
-        case SCM_TOKEN_RPAREN:        return "RPAREN";
+        case SCM_TOKEN_LPAREN:         return "LPAREN";
+        case SCM_TOKEN_RPAREN:         return "RPAREN";
         // case SCM_TOKEN_IF:            return "IF";
         // case SCM_TOKEN_COND:          return "COND";
         // case SCM_TOKEN_LET:           return "LET";
         // case SCM_TOKEN_DEFINE:        return "DEFINE";
-        case SCM_TOKEN_IDENTIFIER:    return "IDENTIFIER";
-        case SCM_TOKEN_LITERAL_NUMBER:return "LITERAL_NUMBER";
-        case SCM_TOKEN_LITERAL_STRING:return "LITERAL_STRING";
-        case SCM_TOKEN_QUOTE:         return "QUOTE";
-        case SCM_TOKEN_QUASIQUOTE:    return "QUASIQUOTE";
-        case SCM_TOKEN_COMMA:         return "COMMA";
-        case SCM_TOKEN_ATSIGN:        return "ATSIGN";
-        case SCM_TOKEN_EOF:           return "EOF";
-        case SCM_TOKEN_UNKNOWN:       return "UNKNOWN";
+        case SCM_TOKEN_IDENTIFIER:     return "IDENTIFIER";
+        case SCM_TOKEN_LITERAL_NUMBER: return "LITERAL_NUMBER";
+        case SCM_TOKEN_LITERAL_STRING: return "LITERAL_STRING";
+        case SCM_TOKEN_LITERAL_BOOLEAN:return "LITERAL_BOOLEAN";
+        case SCM_TOKEN_QUOTE:          return "QUOTE";
+        case SCM_TOKEN_QUASIQUOTE:     return "QUASIQUOTE";
+        case SCM_TOKEN_COMMA:          return "COMMA";
+        case SCM_TOKEN_ATSIGN:         return "ATSIGN";
+        case SCM_TOKEN_EOF:            return "EOF";
+        case SCM_TOKEN_UNKNOWN:        return "UNKNOWN";
         // default:                      return "DEFAULT";
     }
     // clang-format on
@@ -111,6 +120,9 @@ static const char* nfa_state_to_str(scm_lexer_nfa_state_t state)
         case SCM_LEXER_NFA_LITERAL_STRING_0:     return "SCM_LEXER_NFA_LITERAL_STRING_0";
         case SCM_LEXER_NFA_LITERAL_STRING_1:     return "SCM_LEXER_NFA_LITERAL_STRING_1";
         case SCM_LEXER_NFA_LITERAL_STRING_A:     return "SCM_LEXER_NFA_LITERAL_STRING_A";
+        case SCM_LEXER_NFA_LITERAL_BOOLEAN_0:     return "SCM_LEXER_NFA_LITERAL_BOOLEAN_0";
+        case SCM_LEXER_NFA_LITERAL_BOOLEAN_1:     return "SCM_LEXER_NFA_LITERAL_BOOLEAN_1";
+        case SCM_LEXER_NFA_LITERAL_BOOLEAN_A:     return "SCM_LEXER_NFA_LITERAL_BOOLEAN_A";
         case SCM_LEXER_NFA_INVALID_R:            return "SCM_LEXER_NFA_INVALID_R";
         case SCM_LEXER_NFA_NUM_STATES:           return "SCM_LEXER_NFA_NUM_STATES";
         // default:                                 return "UNKNOWN_STATE";
@@ -152,6 +164,9 @@ static scm_token_t* scm_generate_token(
 
         case SCM_LEXER_NFA_LITERAL_STRING_A:
             return scm_create_token(lexer, SCM_TOKEN_LITERAL_STRING, start, end);
+
+        case SCM_LEXER_NFA_LITERAL_BOOLEAN_A:
+            return scm_create_token(lexer, SCM_TOKEN_LITERAL_BOOLEAN, start, end);
 
         default:
             return scm_create_token(lexer, SCM_TOKEN_UNKNOWN, 0, end);
@@ -251,6 +266,9 @@ void scm_lexer_init(scm_lexer_t* lexer, scm_resources_t* resources)
     nfa_configure_state(&lexer->nfa, SCM_LEXER_NFA_LITERAL_STRING_0, NFA_CONTINUE, NULL, NULL);
     nfa_configure_state(&lexer->nfa, SCM_LEXER_NFA_LITERAL_STRING_1, NFA_CONTINUE, NULL, NULL);
     nfa_configure_state(&lexer->nfa, SCM_LEXER_NFA_LITERAL_STRING_A, NFA_ACCEPT, NULL, NULL);
+    nfa_configure_state(&lexer->nfa, SCM_LEXER_NFA_LITERAL_BOOLEAN_0, NFA_CONTINUE, NULL, NULL);
+    nfa_configure_state(&lexer->nfa, SCM_LEXER_NFA_LITERAL_BOOLEAN_1, NFA_CONTINUE, NULL, &scm_lexer_epsilon_cb);
+    nfa_configure_state(&lexer->nfa, SCM_LEXER_NFA_LITERAL_BOOLEAN_A, NFA_ACCEPT, NULL, NULL);
     nfa_configure_state(&lexer->nfa, SCM_LEXER_NFA_QUOTE_A, NFA_ACCEPT, NULL, NULL);
     nfa_configure_state(&lexer->nfa, SCM_LEXER_NFA_QUASIQUOTE_A, NFA_ACCEPT, NULL, NULL);
     // clang-format on

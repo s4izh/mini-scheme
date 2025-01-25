@@ -1,5 +1,6 @@
 #include "scm_types.h"
 #include "scm_log.h"
+#include "sv.h"
 
 #include <assert.h>
 #include <math.h>
@@ -15,7 +16,19 @@ void scm_types_fill_from_list(scm_type_t* type, scm_ast_sexpr_t* list_sexpr)
     };
 }
 
-void scm_types_fill_from_atom_literal(scm_type_t* type, scm_ast_sexpr_t* atom_sexpr)
+void scm_types_fill_from_quote(scm_type_t* type, scm_ast_sexpr_t* quote_sexpr, scm_type_t* quoted_type)
+{
+    assert(type != NULL);
+    assert(quote_sexpr != NULL);
+
+    *type = (scm_type_t){
+        .type = SCM_TYPE_QUOTED,
+        .data.quoted.sexpr = quote_sexpr,
+        .data.quoted.type = quoted_type,
+    };
+}
+
+void scm_types_fill_from_atom(scm_type_t* type, scm_ast_sexpr_t* atom_sexpr)
 {
     assert(type != NULL);
     assert(atom_sexpr != NULL);
@@ -89,6 +102,14 @@ bool scm_type_to_cbool(scm_type_t* type)
         return type->data.boolean.value;
     else if (type->type == SCM_TYPE_LIST)
         return (da_size(&type->data.list.sexpr->data.list.sexprs) >= 1);
+
+    return true;
+}
+
+bool scm_sv_to_cbool(string_view_t* sv)
+{
+    if (sv_equal(sv, &(string_view_t) { "#f", 2 }))
+        return false;
 
     return true;
 }

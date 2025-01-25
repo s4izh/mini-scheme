@@ -17,6 +17,7 @@ typedef enum {
     SCM_TOKEN_IDENTIFIER,
     SCM_TOKEN_LITERAL_NUMBER,
     SCM_TOKEN_LITERAL_STRING,
+    SCM_TOKEN_LITERAL_BOOLEAN,
 
     SCM_TOKEN_QUOTE,
     SCM_TOKEN_QUASIQUOTE,
@@ -50,6 +51,9 @@ typedef enum {
     SCM_LEXER_NFA_LITERAL_STRING_0,
     SCM_LEXER_NFA_LITERAL_STRING_1,
     SCM_LEXER_NFA_LITERAL_STRING_A,
+    SCM_LEXER_NFA_LITERAL_BOOLEAN_0,
+    SCM_LEXER_NFA_LITERAL_BOOLEAN_1,
+    SCM_LEXER_NFA_LITERAL_BOOLEAN_A,
     SCM_LEXER_NFA_INVALID_R,
     SCM_LEXER_NFA_NUM_STATES,
 } scm_lexer_nfa_state_t;
@@ -84,11 +88,12 @@ scm_token_t* scm_lexer_next_token(scm_lexer_t* lexer);
 
 
 #define SCM_SYMBOLS_NO_SPECIAL "!@#$%^&*-_=+[]{}|;:,.<>?/\\~"
+#define SCM_SYMBOLS_NO_SPECIAL_NO_HASHTAG "!@$%^&*-_=+[]{}|;:,.<>?/\\~"
 #define SCM_LETTERS "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 #define SCM_NUMBERS "0123456789"
 #define SCM_LETTERS_NUMBERS SCM_LETTERS SCM_NUMBERS
 
-#define SCM_IDENTIFIERS_BASE SCM_SYMBOLS_NO_SPECIAL SCM_LETTERS
+#define SCM_IDENTIFIERS_BASE SCM_SYMBOLS_NO_SPECIAL_NO_HASHTAG SCM_LETTERS
 #define SCM_IDENTIFIERS_ALL SCM_SYMBOLS_NO_SPECIAL SCM_LETTERS SCM_NUMBERS
 
 // le aposta el "\\"
@@ -106,6 +111,9 @@ scm_token_t* scm_lexer_next_token(scm_lexer_t* lexer);
 #define SCM_LPAREN "("
 #define SCM_RPAREN ")"
 #define SCM_EOS "\0"
+
+#define SCM_HASHTAG "#"
+#define SCM_BOOLEAN_CHARS "tf"
 
     // const char ALL_CHARACTERS[] = 
     //     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"

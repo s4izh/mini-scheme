@@ -96,7 +96,8 @@ static scm_ast_sexpr_t* scm_parse_s_expression(scm_parser_t* parser)
     switch (TOKEN_CURRENT_TYPE(parser)) {
         case SCM_TOKEN_IDENTIFIER:
         case SCM_TOKEN_LITERAL_NUMBER:
-        case SCM_TOKEN_LITERAL_STRING: {
+        case SCM_TOKEN_LITERAL_STRING:
+        case SCM_TOKEN_LITERAL_BOOLEAN: {
             scm_ast_sexpr_t* atom = scm_parser_create_atom(parser);
             return atom;
         };

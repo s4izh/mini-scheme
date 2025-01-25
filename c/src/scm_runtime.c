@@ -42,7 +42,7 @@ static inline scm_result_t scm_builtin_define_constant(scm_runtime_t* runtime, d
         && second->data.atom.token->type != SCM_TOKEN_IDENTIFIER) {
         SCM_DEBUG("constant from an atom");
         scm_type_t* type = scm_resources_alloc_type(runtime->resources);
-        scm_types_fill_from_atom_literal(type, second);
+        scm_types_fill_from_atom(type, second);
         binding->token = first->data.atom.token;
         binding->type = type;
     } else {
@@ -50,14 +50,14 @@ static inline scm_result_t scm_builtin_define_constant(scm_runtime_t* runtime, d
         if (SCM_RESULT_IS_ERR(res)) {
             goto error;
         }
-        if (res.data.ok.type == SCM_OK_VOID) {
+        if (SCM_RESULT_OK_KIND(res) != SCM_OK_TYPE) {
             err = "should evaluate to a type";
             res = SCM_RESULT_ERR_FROM_TOKEN(
                 SCM_ERR_SEMANTIC, err, scm_ast_sexpr_token(first), NULL);
             goto error;
         }
         binding->token = first->data.atom.token;
-        binding->type = res.data.ok.data;
+        binding->type = SCM_RESULT_OK_DATA(res);
     }
     scm_runtime_binding_add(runtime, binding);
     return SCM_RESULT_OK(SCM_OK_VOID, NULL);
@@ -176,8 +176,8 @@ static inline scm_result_t scm_builtin_define_function(scm_runtime_t* runtime, d
             da_append(&arg_identifiers, arg->data.atom.token);
 
             SCM_DEBUG("function: %.*s, registered argument: %.*s",
-                (int)func_name->len, func_name->data,
-                (int)arg_name->len, arg_name->data);
+                    sv_format(func_name),
+                    sv_format(arg_name));
         }
 
         scm_type_t* type = scm_resources_alloc_type(runtime->resources);
@@ -252,13 +252,13 @@ static scm_result_t scm_builtin_if(scm_runtime_t* runtime, scm_type_function_bui
     if (SCM_RESULT_IS_ERR(res))
         return res;
 
-    if (res.data.ok.type == SCM_OK_VOID) {
+    if (SCM_RESULT_OK_KIND(res) != SCM_OK_TYPE) {
         err = "should evaluate to a type";
         return SCM_RESULT_ERR_FROM_TOKEN(
             SCM_ERR_SEMANTIC, err, scm_ast_sexpr_token(cond), NULL);
     }
 
-    scm_type_t* type = res.data.ok.data;
+    scm_type_t* type = SCM_RESULT_OK_DATA(res);
 
     if (scm_type_to_cbool(type)) {
         return scm_runtime_eval(runtime, true_cond);
@@ -310,7 +310,7 @@ static scm_result_t scm_builtin_let(scm_runtime_t* runtime, scm_type_function_bu
         if (SCM_RESULT_IS_ERR(res))
             return res;
 
-        if (res.data.ok.type != SCM_OK_TYPE) {
+        if (SCM_RESULT_OK_KIND(res) != SCM_OK_TYPE) {
             err = "binding should evaluate to a type";
             return SCM_RESULT_ERR_FROM_TOKEN(
                 SCM_ERR_GRAMMAR, err, scm_ast_sexpr_token(bindings), NULL);
@@ -318,7 +318,7 @@ static scm_result_t scm_builtin_let(scm_runtime_t* runtime, scm_type_function_bu
 
         scm_binding_t* binding = scm_runtime_create_binding(runtime);
         binding->token = binding_name->data.atom.token;
-        binding->type  = res.data.ok.data;
+        binding->type  = SCM_RESULT_OK_DATA(res);
 
         scm_environment_binding_add(&env, binding);
     }
@@ -358,13 +358,13 @@ static inline scm_result_t scm_builtin_op_cmp(
         if (SCM_RESULT_IS_ERR(res))
             return res;
 
-        if (res.data.ok.type != SCM_OK_TYPE) {
+        if (SCM_RESULT_OK_KIND(res) != SCM_OK_TYPE) {
             return SCM_RESULT_ERR_FROM_TOKEN(SCM_ERR_SEMANTIC,
-                    "should evaluate to int type",
+                    "should evaluate to a type",
                     scm_ast_sexpr_token(sexpr), NULL);
         }
 
-        scm_type_t* type = res.data.ok.data;
+        scm_type_t* type = SCM_RESULT_OK_DATA(res);
         if (type->type != SCM_TYPE_NUMBER) {
             return SCM_RESULT_ERR_FROM_TOKEN(SCM_ERR_SEMANTIC,
                     "should evaluate to int type",
@@ -416,13 +416,13 @@ static inline scm_result_t scm_builtin_op_math(
         if (SCM_RESULT_IS_ERR(res))
             return res;
 
-        if (res.data.ok.type != SCM_OK_TYPE) {
+        if (SCM_RESULT_OK_KIND(res) != SCM_OK_TYPE) {
             return SCM_RESULT_ERR_FROM_TOKEN(SCM_ERR_SEMANTIC,
                     "should evaluate to a number type",
                     scm_ast_sexpr_token(sexpr), NULL);
         }
 
-        scm_type_t* type = res.data.ok.data;
+        scm_type_t* type = SCM_RESULT_OK_DATA(res);
         if (type->type != SCM_TYPE_NUMBER) {
             return SCM_RESULT_ERR_FROM_TOKEN(SCM_ERR_SEMANTIC,
                     "should evaluate to a number type",
@@ -693,6 +693,12 @@ static scm_result_t scm_runtime_eval_ast_atom(
             type->data.string.ref = true;
             return SCM_RESULT_OK(SCM_OK_TYPE, type);
         }
+        case SCM_TOKEN_LITERAL_BOOLEAN: {
+            scm_type_t* type = scm_resources_alloc_type(runtime->resources);
+            type->type = SCM_TYPE_BOOLEAN;
+            type->data.boolean.value = scm_sv_to_cbool(&atom->token->sv);
+            return SCM_RESULT_OK(SCM_OK_TYPE, type);
+        }
         default:
             return SCM_RESULT_ERR_FROM_TOKEN(
                 SCM_ERR_SEMANTIC, "evaluating a non atom expresion as atom",
@@ -713,22 +719,51 @@ static scm_result_t scm_runtime_eval_ast_quote(
 
     scm_token_t* token = quote->data.quote.quote;
 
+    scm_result_t res;
+    char* err;
+
+    scm_type_t* type = scm_resources_alloc_type(runtime->resources);
+
     switch (sexpr->type) {
         case SCM_AST_QUOTE: {
-            return SCM_RESULT_ERR(
-                SCM_ERR_TODO, "eval quote", NULL, token->line, 0, NULL)
+            res = scm_runtime_eval_ast_quote(runtime, sexpr);
+            if (SCM_RESULT_IS_ERR(res)) {
+                goto error;
+            }
+
+            if (SCM_RESULT_OK_KIND(res) != SCM_OK_TYPE) {
+                err = "quoted expr should evaluate to a type";
+                res = SCM_RESULT_ERR_FROM_TOKEN(
+                    SCM_ERR_GRAMMAR, err, scm_ast_sexpr_token(sexpr), NULL);
+                goto error;
+            }
+
+            scm_types_fill_from_quote(type, sexpr, SCM_RESULT_OK_DATA(res));
+
+            return SCM_RESULT_OK(SCM_OK_TYPE, type);
         };
         case SCM_AST_ATOM: {
-            printf("TODO!!!!!!!!!!\n");
+            scm_type_t* type = scm_resources_alloc_type(runtime->resources);
+            scm_type_t* type_atom = scm_resources_alloc_type(runtime->resources);
+            
+            scm_types_fill_from_atom(type_atom, sexpr);
+            scm_types_fill_from_quote(type, sexpr, type_atom);
+
+            return SCM_RESULT_OK(SCM_OK_TYPE, type);
         };
         case SCM_AST_LIST: {
             scm_type_t* type = scm_resources_alloc_type(runtime->resources);
+
             scm_types_fill_from_list(type, sexpr);
+
             return SCM_RESULT_OK(SCM_OK_TYPE, type);
         };
         default:
             __builtin_unreachable();
     }
+error:
+    free(type);
+    return res;
 }
 
 static scm_result_t scm_runtime_eval_ast_list(
@@ -817,14 +852,14 @@ static scm_result_t scm_runtime_eval_ast_list(
                 scm_runtime_pop_environment(runtime);
                 return res;
             }
-            if (res.data.ok.type == SCM_OK_VOID) {
+            if (SCM_RESULT_OK_KIND(res) != SCM_OK_TYPE) {
                 RC_UNREF(binding);
                 scm_runtime_pop_environment(runtime);
                 err = "should evaluate to a type";
                 return SCM_RESULT_ERR_FROM_TOKEN(
                         SCM_ERR_SEMANTIC, err, scm_ast_sexpr_token(sexpr), NULL);
             }
-            binding->type = res.data.ok.data;
+            binding->type = SCM_RESULT_OK_DATA(res);
 
             SCM_DEBUG(
                 "creating call stack, adding %.*s",
