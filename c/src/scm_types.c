@@ -1,11 +1,13 @@
 #include "scm_types.h"
 #include "scm_log.h"
+#include "scm_result.h"
 #include "sv.h"
 
 #include <assert.h>
 #include <math.h>
+#include <stdio.h>
 
-void scm_types_fill_from_list(scm_type_t* type, scm_ast_sexpr_t* list_sexpr)
+scm_result_t scm_types_fill_from_list(scm_type_t* type, scm_ast_sexpr_t* list_sexpr)
 {
     assert(type != NULL);
     assert(list_sexpr != NULL);
@@ -14,9 +16,11 @@ void scm_types_fill_from_list(scm_type_t* type, scm_ast_sexpr_t* list_sexpr)
         .type = SCM_TYPE_LIST,
         .data.list.sexpr = list_sexpr,
     };
+
+    return SCM_RESULT_OK(SCM_OK_TYPE, type);
 }
 
-void scm_types_fill_from_quote(scm_type_t* type, scm_ast_sexpr_t* quote_sexpr, scm_type_t* quoted_type)
+scm_result_t scm_types_fill_from_quote(scm_type_t* type, scm_ast_sexpr_t* quote_sexpr, scm_type_t* quoted_type)
 {
     assert(type != NULL);
     assert(quote_sexpr != NULL);
@@ -26,9 +30,11 @@ void scm_types_fill_from_quote(scm_type_t* type, scm_ast_sexpr_t* quote_sexpr, s
         .data.quoted.sexpr = quote_sexpr,
         .data.quoted.type = quoted_type,
     };
+
+    return SCM_RESULT_OK(SCM_OK_TYPE, type);
 }
 
-void scm_types_fill_from_atom(scm_type_t* type, scm_ast_sexpr_t* atom_sexpr)
+scm_result_t scm_types_fill_from_atom(scm_type_t* type, scm_ast_sexpr_t* atom_sexpr)
 {
     assert(type != NULL);
     assert(atom_sexpr != NULL);
@@ -41,19 +47,20 @@ void scm_types_fill_from_atom(scm_type_t* type, scm_ast_sexpr_t* atom_sexpr)
         case SCM_TOKEN_LITERAL_NUMBER: {
             type->type = SCM_TYPE_NUMBER;
             type->data.number.value = sv_toi(&atom->token->sv);
-            return;
+            break;
         }
         case SCM_TOKEN_LITERAL_STRING: {
             type->type = SCM_TYPE_STRING;
             type->data.string.value = (char*)atom->token->sv.data;
             type->data.string.len = atom->token->sv.len;
             type->data.string.ref = true;
-            return;
+            break;
         }
         default:
             SCM_ERROR("this isn't an atom literal token type");
-            return;
     }
+
+    return SCM_RESULT_OK(SCM_OK_TYPE, type);
 }
 
 static void print_num(f64 num)
@@ -91,6 +98,11 @@ void scm_types_print(scm_type_t* type)
             return;
         };
         case SCM_TYPE_FUNCTION: {
+            printf("TODO: function print unimplemented\n");
+            return;
+        };
+        case SCM_TYPE_SYMBOL: {
+            sv_print(&type->data.symbol.sv);
             return;
         };
     }

@@ -26,6 +26,8 @@ static inline scm_result_t scm_builtin_define_constant(scm_runtime_t* runtime, d
 
     binding = scm_runtime_create_binding(runtime);
 
+    scm_type_t* type = NULL;
+
     scm_ast_sexpr_t* first = da_at(sexprs, 1);
 
     // just one sexpr can be evaluated as the constant
@@ -42,9 +44,14 @@ static inline scm_result_t scm_builtin_define_constant(scm_runtime_t* runtime, d
         && second->data.atom.token->type != SCM_TOKEN_IDENTIFIER) {
         SCM_DEBUG("constant from an atom");
         scm_type_t* type = scm_resources_alloc_type(runtime->resources);
-        scm_types_fill_from_atom(type, second);
+
+        res = scm_types_fill_from_atom(type, second);
+        if (SCM_RESULT_IS_ERR(res)) {
+            goto error;
+        }
         binding->token = first->data.atom.token;
         binding->type = type;
+
     } else {
         res = scm_runtime_eval(runtime, second);
         if (SCM_RESULT_IS_ERR(res)) {
@@ -64,6 +71,8 @@ static inline scm_result_t scm_builtin_define_constant(scm_runtime_t* runtime, d
 
 error:
     RC_UNREF(binding);
+    if (type != NULL)
+        free(type);
     return res;
 }
 
@@ -502,13 +511,30 @@ static scm_result_t scm_builtin_op_eq(
 static scm_result_t scm_builtin_list_car(
     scm_runtime_t* runtime, scm_type_function_builtin_t* func, da_scm_ast_sexpr_ptr* sexprs)
 {
-    scm_ast_sexpr_t* sexpr = da_at(sexprs, 0);
+    scm_ast_sexpr_t* quote_sexpr = da_at(sexprs, 0);
+
+    if (quote_sexpr->type != SCM_AST_QUOTE) {
+        return SCM_RESULT_ERR_FROM_TOKEN(SCM_ERR_SEMANTIC,
+                "only can car on a quoted list",
+                scm_ast_sexpr_token(quote_sexpr), NULL);
+    }
+
+    scm_ast_sexpr_t* sexpr = quote_sexpr->data.quote.sexpr;
 
     if (sexpr->type != SCM_AST_LIST) {
         return SCM_RESULT_ERR_FROM_TOKEN(SCM_ERR_SEMANTIC,
-                "only can car on a list",
+                "only can car on a quoted list",
                 scm_ast_sexpr_token(sexpr), NULL);
     }
+
+    if (da_size(&sexpr->data.list.sexprs) == 0)
+    {
+        return SCM_RESULT_ERR_FROM_TOKEN(SCM_ERR_SEMANTIC,
+                "can't car from empty list",
+                scm_ast_sexpr_token(sexpr), NULL);
+    }
+
+    scm_ast_sexpr_t* first = da_at(&sexpr->data.list.sexprs, 1);
 
     scm_type_t* type = scm_resources_alloc_type(runtime->resources);
 
@@ -723,6 +749,7 @@ static scm_result_t scm_runtime_eval_ast_quote(
     char* err;
 
     scm_type_t* type = scm_resources_alloc_type(runtime->resources);
+    scm_type_t* type_atom = NULL;
 
     switch (sexpr->type) {
         case SCM_AST_QUOTE: {
@@ -738,23 +765,36 @@ static scm_result_t scm_runtime_eval_ast_quote(
                 goto error;
             }
 
-            scm_types_fill_from_quote(type, sexpr, SCM_RESULT_OK_DATA(res));
+            res = scm_types_fill_from_quote(type, sexpr, SCM_RESULT_OK_DATA(res));
+            if (SCM_RESULT_IS_ERR(res)) {
+                goto error;
+            }
 
             return SCM_RESULT_OK(SCM_OK_TYPE, type);
         };
         case SCM_AST_ATOM: {
-            scm_type_t* type = scm_resources_alloc_type(runtime->resources);
-            scm_type_t* type_atom = scm_resources_alloc_type(runtime->resources);
+            type = scm_resources_alloc_type(runtime->resources);
+            type_atom = scm_resources_alloc_type(runtime->resources);
             
-            scm_types_fill_from_atom(type_atom, sexpr);
-            scm_types_fill_from_quote(type, sexpr, type_atom);
+            res = scm_types_fill_from_atom(type_atom, sexpr);
+            if (SCM_RESULT_IS_ERR(res)) {
+                goto error;
+            }
+
+            res = scm_types_fill_from_quote(type, sexpr, type_atom);
+            if (SCM_RESULT_IS_ERR(res)) {
+                goto error;
+            }
 
             return SCM_RESULT_OK(SCM_OK_TYPE, type);
         };
         case SCM_AST_LIST: {
             scm_type_t* type = scm_resources_alloc_type(runtime->resources);
 
-            scm_types_fill_from_list(type, sexpr);
+            res = scm_types_fill_from_list(type, sexpr);
+            if (SCM_RESULT_IS_ERR(res)) {
+                goto error;
+            }
 
             return SCM_RESULT_OK(SCM_OK_TYPE, type);
         };
@@ -762,7 +802,8 @@ static scm_result_t scm_runtime_eval_ast_quote(
             __builtin_unreachable();
     }
 error:
-    free(type);
+    scm_resources_free_type(runtime->resources, type);
+    scm_resources_free_type(runtime->resources, type_atom);
     return res;
 }
 

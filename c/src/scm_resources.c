@@ -105,6 +105,26 @@ void* scm_resources_alloc_type(scm_resources_t* resources)
     return type;
 }
 
+void scm_resources_free_binding(scm_resources_t* resources, void* binding)
+{
+    if (binding != NULL)
+        free(binding);
+}
+
+void scm_resources_free_type(scm_resources_t* resources, void* type)
+{
+    if (type != NULL)
+        free(type);
+}
+
+void scm_resources_free_token(scm_resources_t* resources, void* token)
+{
+}
+
+void scm_resources_free_sexpr(scm_resources_t* resources, void* sexpr)
+{
+}
+
 scm_result_t scm_resources_init(scm_resources_t* resources)
 {
     void* tokens_data = malloc(TOKENS_IN_POOL * sizeof(scm_token_t));

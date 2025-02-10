@@ -19,6 +19,11 @@ void* scm_resources_alloc_sexpr(scm_resources_t* resources);
 void* scm_resources_alloc_binding(scm_resources_t* resources);
 void* scm_resources_alloc_type(scm_resources_t* resources);
 
+void scm_resources_free_token(scm_resources_t* resources, void* token);
+void scm_resources_free_sexpr(scm_resources_t* resources, void* sexpr);
+void scm_resources_free_binding(scm_resources_t* resources, void* binding);
+void scm_resources_free_type(scm_resources_t* resources, void* type);
+
 scm_result_t scm_resources_init(scm_resources_t* resources);
 scm_result_t scm_resources_free(scm_resources_t* resources);
 

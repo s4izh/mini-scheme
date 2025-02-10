@@ -34,7 +34,7 @@ struct _scm_ast_root_t {
 
 // sexpr ::= <atom>
 //         |  ( <sexpr>* )
-//         | '( <sexpr>* )
+//         | '<sexpr>*
 struct _scm_ast_sexpr_t {
     enum {
         SCM_AST_ATOM,

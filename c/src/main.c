@@ -14,7 +14,7 @@
 
 static void usage(char* name)
 {
-    printf("Usage: %s [file.scm]\n", name);
+ 
 }
 
 static scm_result_t scm_evaluate_source(

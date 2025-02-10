@@ -120,9 +120,9 @@ static const char* nfa_state_to_str(scm_lexer_nfa_state_t state)
         case SCM_LEXER_NFA_LITERAL_STRING_0:     return "SCM_LEXER_NFA_LITERAL_STRING_0";
         case SCM_LEXER_NFA_LITERAL_STRING_1:     return "SCM_LEXER_NFA_LITERAL_STRING_1";
         case SCM_LEXER_NFA_LITERAL_STRING_A:     return "SCM_LEXER_NFA_LITERAL_STRING_A";
-        case SCM_LEXER_NFA_LITERAL_BOOLEAN_0:     return "SCM_LEXER_NFA_LITERAL_BOOLEAN_0";
-        case SCM_LEXER_NFA_LITERAL_BOOLEAN_1:     return "SCM_LEXER_NFA_LITERAL_BOOLEAN_1";
-        case SCM_LEXER_NFA_LITERAL_BOOLEAN_A:     return "SCM_LEXER_NFA_LITERAL_BOOLEAN_A";
+        case SCM_LEXER_NFA_LITERAL_BOOLEAN_0:    return "SCM_LEXER_NFA_LITERAL_BOOLEAN_0";
+        case SCM_LEXER_NFA_LITERAL_BOOLEAN_1:    return "SCM_LEXER_NFA_LITERAL_BOOLEAN_1";
+        case SCM_LEXER_NFA_LITERAL_BOOLEAN_A:    return "SCM_LEXER_NFA_LITERAL_BOOLEAN_A";
         case SCM_LEXER_NFA_INVALID_R:            return "SCM_LEXER_NFA_INVALID_R";
         case SCM_LEXER_NFA_NUM_STATES:           return "SCM_LEXER_NFA_NUM_STATES";
         // default:                                 return "UNKNOWN_STATE";
@@ -199,11 +199,9 @@ scm_token_t* scm_lexer_next_token(scm_lexer_t* lexer)
 
     conclusion = nfa_process(&lexer->nfa, lexer->src[lexer->pos]);
     while (conclusion == NFA_CONTINUE) {
-        SCM_LEXER_SLEEP;
         lexer->pos++;
         conclusion = nfa_process(&lexer->nfa, lexer->src[lexer->pos]);
     }
-    SCM_LEXER_SLEEP;
 
     pos_end = lexer->pos;
 

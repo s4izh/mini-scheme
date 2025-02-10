@@ -387,7 +387,7 @@ static const MunitSuite test_suite = {
 int main(int argc, char* argv[MUNIT_ARRAY_PARAM(argc + 1)])
 {
     scm_log_init();
-    scm_log_set_level(LOG_WARNING);
+    scm_log_set_level(LOG_ERROR);
     scm_log_timestamp_mode(0);
 
     const MunitSuite mscm_suites[] = {

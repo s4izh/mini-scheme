@@ -121,13 +121,6 @@ scm_token_t* scm_lexer_next_token(scm_lexer_t* lexer);
     //     "0123456789"
     //     "!@#$%^&*-_=+[]{}|;:'\",.<>?/\\`~()";
 
-// #define SCM_LEXER_SLEEP_ENABLE 1
-#ifdef SCM_LEXER_SLEEP_ENABLE
-#define SCM_LEXER_SLEEP usleep(300000);
-#else
-#define SCM_LEXER_SLEEP ;
-#endif
-
 DA_DEFINE(scm_token_t*, da_token_ptr);  
 
 #endif // __SCM_LEXER_H__
