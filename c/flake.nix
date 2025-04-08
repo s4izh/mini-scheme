@@ -1,5 +1,5 @@
 {
-  description = "A Nix flake using a separate shell.nix";
+  description = "(m)ini (sc)he(m)e build flake";
 
   inputs = {
     nixpkgs = {

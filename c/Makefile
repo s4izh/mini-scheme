@@ -13,7 +13,7 @@ EXTERNAL = external
 
 # CFLAGS = -fsanitize=address -Wall -Wextra -pedantic -Werror=switch -std=c99 -g3 -MMD -MP -lreadline
 # CFLAGS = -fsanitize=address -std=c99 -g3 -MMD -MP -lreadline
-CFLAGS = -std=c99 -g3 -MMD -MP -lreadline
+CFLAGS = -std=c99 -ggdb -MMD -MP -lreadline
 INCLUDES = -I./src -I./external -I./src/tests
 CC = gcc
 

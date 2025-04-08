@@ -13,7 +13,6 @@ struct rc_t {
 #define RC_INIT(obj, free_fn)              \
     do {                                   \
         (obj)->__ref_count.references = 1; \
-        (obj)->__ref_count.free = free_fn; \
     } while (0)
 
 #define RC_REF(obj) ((obj)->__ref_count.references++)
