@@ -4,7 +4,7 @@ A compact implementation of a scheme-like programming language interpreter.
 
 ## Overview
 
-`mini-scheme` is a minimalist (not finished) implementation a scheme-like
+`mini-scheme` is a minimalist (not finished) implementation of a scheme-like
 programming language, created with an emphasis on learning and providing a
 foundation for experimenting with language implementation concepts. While the
 project currently offers a C-based interpreter, it is also intended to expand
